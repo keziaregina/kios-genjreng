@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { Db, MongoClient } from "mongodb";
 
 declare global {
     // biar TS tau kita bikin properti global custom
@@ -6,13 +6,14 @@ declare global {
     var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-const uri: any = process.env.MONGODB_URI;
+const dbName = "kios_genjreng";
+const uri: string | undefined = process.env.MONGODB_URI;
 const options: any = {};
 
-let client;
-let clientPromise;
+let client: MongoClient;
+let clientPromise: Promise<MongoClient>;
 
-if (!process.env.MONGODB_URI) {
+if (!uri) {
     throw new Error('No uri mongo has inserted');
 }
 
@@ -28,4 +29,9 @@ if (process.env.NODE_ENV === "development") {
     clientPromise = client.connect();
 }
 
-export default clientPromise;
+export default clientPromise as Promise<MongoClient>;
+
+export async function initDB(): Promise<Db> {
+    const client = await clientPromise;
+    return client.db(dbName);
+}
