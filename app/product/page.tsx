@@ -1,4 +1,5 @@
 import { Product as ProductType } from "@/types/product";
+import ProductForm from "./components/Form";
 
 export default async function Product() {
   const res = await fetch("http://localhost:3000/api/product", {
@@ -15,8 +16,10 @@ export default async function Product() {
     <div>
       <h1>hello world!</h1>
       {products.map((item) => (
-        <li key={item._id}>{item._id}</li>
+        <li key={item._id}>{item.name}</li>
       ))}
+
+      <ProductForm />
     </div>
   );
 }    
