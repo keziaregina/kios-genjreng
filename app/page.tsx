@@ -1,39 +1,35 @@
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Link from "next/link";
 import LoginButton from "./components/LoginButton";
 
 export default function Home() {
 
   return (
-    <div className="relative min-h-screen w-full text-inter">
-      <Image
-        src="/landing_page1.png"
-        alt="Gitar"
-        width={1000}
-        height={1000}
-        className="absolute h-full w-full object-cover -z-10"
-      />
+    <div className="flex flex-col min-h-screen bg-primary text-white">
+      <div className="relative w-full h-[60vh]">
+        <Image
+          src="/landing_page1.png"
+          alt="Gitar"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute bottom-0 w-full h-40 bg-linear-to-t from-primary to-transparent"></div>
+      </div>
 
-      <div className="absolute h-[600px]"></div>
-      <div className="absolute w-full h-full inset-0 bg-gradient-to-t from-primary via-transparent to-transparent from-20% to-40% z-0" />
-      <div className="absolute w-full px-6 pb-12 text-center z-20">
-
-        <div className="flex justify-center mb-4">
-          <span className="mx-1 h-2 w-2 rounded-full bg-gray-400"></span>
-          <span className="mx-1 h-2 w-2 rounded-full bg-button-primary"></span>
-          <span className="mx-1 h-2 w-2 rounded-full bg-gray-400"></span>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <div className="flex gap-2 mb-3">
+          <span className="w-2 h-2 bg-gray-600 rounded-full"></span>
+          <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+          <span className="w-2 h-2 bg-gray-600 rounded-full"></span>
         </div>
 
-        <h1 className="text-white text-xl font-bold mb-2">
-          Temukan gitar favoritmu
-        </h1>
-
-        <p className="text-gray-300 text-sm mb-6">
+        <h1 className="text-2xl font-bold mb-2">Temukan gitar favoritmu</h1>
+        <p className="text-gray-400 text-sm">
           Menyediakan pilihan gitar terlengkap dengan harga yang terjangkau
         </p>
+      </div>
 
-        {/* Button */}
+      <div className="p-6">
         <LoginButton />
       </div>
     </div>
