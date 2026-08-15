@@ -1,10 +1,12 @@
-import { Product } from "./product";
+import type {
+  Category as CategoryModel,
+  Product,
+} from "@/lib/generated/prisma/client";
 
-export interface Category {
-    id: number,
-    name: string,
-    createdAt: Date | null,
-    updatedAt: Date | null,
+/** Row shape of `Category`. Derived from prisma/schema.prisma — never hand-edit. */
+export type Category = CategoryModel;
 
-    products: Product[] | []
-}
+/** `Category` loaded with `include: { products: true }`. */
+export type CategoryWithProducts = Category & {
+  products: Product[];
+};

@@ -14,7 +14,7 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 
   products Product[]
 }
@@ -26,17 +26,20 @@ model Product {
   categoryId Int
   userId     Int
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime @updatedAt
 
   category Category @relation(fields: [categoryId], references: [id])
-  product  User     @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([categoryId])
+  @@index([userId])
 }
 
 model Category {
   id        Int      @id @default(autoincrement())
-  name      String
+  name      String   @unique
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 
   products Product[]
 }
