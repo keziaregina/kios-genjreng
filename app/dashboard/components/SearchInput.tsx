@@ -3,7 +3,7 @@
 import { Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
-import React, { useRef, useState } from "react";
+import React, { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const SearchInput = () => {
@@ -67,4 +67,17 @@ const SearchInput = () => {
   );
 };
 
-export default SearchInput;
+/**
+ * useSearchParams() opts the whole route out of static rendering unless it sits
+ * under a Suspense boundary, so the boundary ships with the component instead of
+ * being re-declared at every call site.
+ */
+const SearchInputBoundary = () => (
+  <Suspense
+    fallback={<div className="bg-quarternary mb-[21px] h-[50px] w-full rounded-xl" />}
+  >
+    <SearchInput />
+  </Suspense>
+);
+
+export default SearchInputBoundary;

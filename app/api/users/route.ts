@@ -1,58 +1,38 @@
 import { NextResponse } from "next/server";
+
+import { apiError, badRequest, publicUserSelect } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-    try {
-        const users = await prisma.user.findMany();
-        return NextResponse.json(users);
-    } catch (err) {
-        return NextResponse.json({
-            message: "Failed to fetch users",
-        }, {
-            status: 500,
-        })
-    }
+  try {
+    const users = await prisma.user.findMany({
+      select: publicUserSelect,
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(users);
+  } catch (error) {
+    return apiError("GET /api/users", error);
+  }
 }
 
 export async function POST(request: Request) {
-    try {
-        const body = await request.json();
-        const { name, email, password } = body;
+  try {
+    const { name, email, password } = await request.json();
 
-        const newUser = await prisma.user.create({
-            data: {
-                name,
-                email, 
-                password
-            }
-        });
-
-        return NextResponse.json(newUser, {status: 200});
-    } catch (err) {
-        return NextResponse.json({
-            message: "Failed to create user",
-        }, {
-            status: 500,
-        })
+    if (!name || !email || !password) {
+      return badRequest("name, email, and password are required");
     }
-}
 
-export async function DELETE(request: Request, { params } : { params: {id : number} }) {
-    try {
-        const id = params.id;
+    // SECURITY TODO: password is persisted in plain text. Hash it (argon2/bcrypt)
+    // before this endpoint is exposed to anything but local development.
+    const user = await prisma.user.create({
+      data: { name, email, password },
+      select: publicUserSelect,
+    });
 
-        const deletedUser = await prisma.user.delete({
-            where: {
-                id: id
-            }
-        });
-
-        return NextResponse.json(deletedUser, {status: 200});
-    } catch (err) {
-        return NextResponse.json({
-            message: "Failed to delete user",
-        }, {
-            status: 500,
-        })
-    }
+    return NextResponse.json(user, { status: 201 });
+  } catch (error) {
+    return apiError("POST /api/users", error);
+  }
 }

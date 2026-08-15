@@ -1,24 +1,40 @@
-import clientPromise from "@/lib/mongodb";
-import { initDB } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
+import { apiError, badRequest } from "@/lib/api";
+import { prisma } from "@/lib/prisma";
+import { getProducts } from "@/lib/queries";
+
 export async function GET() {
-    const db = await initDB();
-    const result = await db.collection("produk").find().toArray()
-    return NextResponse.json(result);
+  try {
+    return NextResponse.json(await getProducts());
+  } catch (error) {
+    return apiError("GET /api/product", error);
+  }
 }
 
-export async function POST(req: Request) {
-    const db = await initDB();
-    const body = await req.json();
-    const result = await db.collection("produk").insertOne(body);
-    return NextResponse.json(result);
-}
+export async function POST(request: Request) {
+  try {
+    const { name, price, categoryId, userId } = await request.json();
 
-export async function DELETE(req: Request, { params } : { params: {id : number} }) {
-    const db = await initDB();  
-    await db.collection("produk").deleteOne({
-        id: params.id
+    if (!name || price === undefined || !categoryId || !userId) {
+      return badRequest("name, price, categoryId, and userId are required");
+    }
+
+    if (!Number.isInteger(price) || price < 0) {
+      return badRequest("price must be a non-negative integer");
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        name,
+        price,
+        categoryId: Number(categoryId),
+        userId: Number(userId),
+      },
     });
-    return NextResponse.json({ message: "Deleted" });
+
+    return NextResponse.json(product, { status: 201 });
+  } catch (error) {
+    return apiError("POST /api/product", error);
+  }
 }

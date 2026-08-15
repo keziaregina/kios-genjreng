@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { categories } from "@/lib/placeholder";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { Suspense } from "react";
 
-type category = {
-	id: number
-	name: string;
-	image: string;
-}
+/** Shape of the mock rows in lib/placeholder.ts, not the Prisma `Category` model. */
+type PlaceholderCategory = {
+  id: number;
+  name: string;
+  image: string;
+};
 
 const Category = () => {
 	const pathname = usePathname();
@@ -31,7 +32,7 @@ const Category = () => {
 
   return (
     <div className="flex gap-[12px] w-80% overflow-x-scroll relative">
-      {categories.map((item: category) => {
+      {categories.map((item: PlaceholderCategory) => {
         return (
           <Button
             key={item.id}
@@ -68,4 +69,11 @@ const Category = () => {
   );
 };
 
-export default Category;
+/** Same Suspense requirement as SearchInput — see app/dashboard/components/SearchInput.tsx. */
+const CategoryBoundary = () => (
+  <Suspense fallback={<div className="h-[60px] w-full" />}>
+    <Category />
+  </Suspense>
+);
+
+export default CategoryBoundary;

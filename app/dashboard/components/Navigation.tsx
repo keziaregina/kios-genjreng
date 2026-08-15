@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 const Navigation = () => {
   const pathname = usePathname();
 
-  if (pathname == '/dashboard/profile') return;
+  if (pathname === "/dashboard/profile") return null;
 
   return (
     <nav className="sticky bottom-0">

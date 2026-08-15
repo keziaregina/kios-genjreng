@@ -1,16 +1,11 @@
 import React from "react";
 import SearchInput from "../components/SearchInput";
 import { inter } from "@/app/ui/font";
-import { Button } from "@/components/ui/button";
-import { ChevronRight, Settings2Icon } from "lucide-react";
+import { Settings2Icon } from "lucide-react";
 import Category from "./components/Category";
 import Image from "next/image";
 import PageDivider from "./components/PageDivider";
 
-interface search {
-  query?: string;
-  category?: string;
-}
 const SearchPage = async (props: {
   searchParams?: Promise<{
     query?: string;

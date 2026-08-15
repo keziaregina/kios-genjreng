@@ -6,69 +6,59 @@ import {
   Bookmark,
   ShieldCheck,
   ShoppingCart,
-	CircleQuestionMark,
-	InfoIcon,
-	Copyright,
-	UserCircle2,
-	User,
-  ChevronLeft,
+  CircleQuestionMark,
+  InfoIcon,
+  Copyright,
+  User,
+  type LucideIcon,
 } from "lucide-react";
 import React from "react";
 import BackButton from "./components/BackButton";
 
-type menuType = {
+type MenuItem = {
   name: string;
-  icon: string;
+  icon: LucideIcon;
   url: string;
 };
 
-const menu: menuType[] = [
+// The icon component is stored directly — no string-to-component lookup map.
+const menu: MenuItem[] = [
   {
     name: "Favorit",
-    icon: "Heart",
+    icon: Heart,
     url: "",
   },
   {
     name: "Keranjang",
-    icon: "ShoppingCart",
+    icon: ShoppingCart,
     url: "",
   },
   {
     name: "Riwayat Pesanan",
-    icon: "Clock3",
+    icon: Clock3,
     url: "",
   },
   {
     name: "Alamat Tersimpan",
-    icon: "Bookmark",
+    icon: Bookmark,
     url: "",
   },
   {
     name: "Privasi",
-    icon: "Lock",
+    icon: Lock,
     url: "",
   },
   {
     name: "Keamanan",
-    icon: "ShieldCheck",
+    icon: ShieldCheck,
     url: "",
   },
   {
     name: "Log Out",
-    icon: "Key",
+    icon: Key,
     url: "",
   },
-] as const;
-
-const icons: any = {
-  Heart,
-  ShoppingCart,
-  Clock3,
-  Bookmark,
-  Lock,
-  ShieldCheck,
-  Key,
-};
+];
 
 const Page = () => {
   return (
@@ -90,15 +80,12 @@ const Page = () => {
       </div>
       <div className="w-full flex-1 bg-[#2C2727] px-[33px] pt-[73px] relative rounded-t-2xl overflow-y-scroll">
         <ul className="flex flex-col text-text-primary gap-5 font-semibold mb-[54px]">
-          {menu.map((item, index) => {
-            const Icon = icons[item.icon];
-            return (
-              <li key={index} className="flex gap-5">
-                <Icon  color="#FF2782" />
-								<p>{item.name}</p>
-              </li>
-            );
-          })}
+          {menu.map(({ name, icon: Icon }) => (
+            <li key={name} className="flex gap-5">
+              <Icon className="text-button-primary" />
+              <p>{name}</p>
+            </li>
+          ))}
         </ul>
 
 				<div className=" flex flex-col gap-2 text-[#A7A7A7] text-[10px] font-extrabold mb-[29px]">
