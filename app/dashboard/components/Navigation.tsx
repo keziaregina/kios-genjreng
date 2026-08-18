@@ -1,37 +1,83 @@
 "use client";
 
-import React from "react";
-import { House, Search, ShoppingBasket, Store, User } from "lucide-react";
+import {
+  House,
+  Search,
+  ShoppingBasket,
+  Store,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import React from "react";
 
-const Navigation = () => {
+import { cn } from "@/lib/utils";
+import { Role } from "@/types/user";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+const leadingItems: NavItem[] = [
+  { href: "/dashboard", label: "Home", icon: House },
+  { href: "/dashboard/search", label: "Search", icon: Search },
+];
+
+const trailingItems: NavItem[] = [
+  { href: "/dashboard/profile", label: "Profile", icon: User },
+];
+
+// Merchants sell and buyers only browse, so the centre button differs per role.
+const centerItem: Record<Role, NavItem> = {
+  [Role.BUYER]: { href: "/dashboard/cart", label: "Cart", icon: ShoppingBasket },
+  [Role.MERCHANT]: { href: "/dashboard/store", label: "Store", icon: Store },
+};
+
+const Navigation = ({ role }: { role: Role }) => {
   const pathname = usePathname();
 
   if (pathname === "/dashboard/profile") return null;
 
+  const center = centerItem[role];
+  const CenterIcon = center.icon;
+
+  const renderTab = ({ href, label, icon: Icon }: NavItem) => {
+    const active = pathname === href;
+
+    return (
+      <Link
+        key={href}
+        href={href}
+        className="flex flex-col items-center justify-center"
+      >
+        <Icon className={cn(active ? "text-text-primary" : "text-text-secondary")} />
+        <p
+          className={cn(
+            "text-sm",
+            active ? "text-text-primary" : "text-text-secondary",
+          )}
+        >
+          {label}
+        </p>
+      </Link>
+    );
+  };
+
   return (
     <nav className="sticky bottom-0">
-      <div className="flex pt-[48px] pb-[24px] bg-linear-to-t from-primary to-transparent from-75% w-full justify-around items-center">
-        <Link href="/dashboard" className="flex flex-col items-center justify-center">
-          <House className="text-text-secondary"/>
-          <p className="text-sm text-text-secondary">Home</p>
+      <div className="from-primary flex w-full items-center justify-around bg-linear-to-t from-75% to-transparent pt-[48px] pb-[24px]">
+        {leadingItems.map(renderTab)}
+        <Link
+          href={center.href}
+          aria-label={center.label}
+          className="text-text-primary bg-button-secondary flex h-14 w-14 items-center justify-center rounded-md"
+        >
+          <CenterIcon />
         </Link>
-        <Link href="/dashboard/search" className="flex flex-col items-center justify-center">
-          <Search className="text-text-secondary"/>
-          <p className="text-sm text-text-secondary">Search</p>
-        </Link>
-        <Link href="/dashboard/store" className="text-text-primary w-14 h-14 bg-button-secondary flex justify-center items-center rounded-md">
-          <Store/>
-        </Link>
-        <Link href="/dashboard/cart" className="flex flex-col items-center justify-center">
-          <ShoppingBasket  className="text-text-secondary"/>
-          <p className="text-sm text-text-secondary">Cart</p>
-        </Link>
-        <Link href="/dashboard/profile" className="flex flex-col items-center justify-center">
-          <User  className="text-text-secondary"/>
-          <p className="text-sm text-text-secondary">Profile</p>
-        </Link>
+        {trailingItems.map(renderTab)}
       </div>
     </nav>
   );
