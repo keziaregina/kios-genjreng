@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { apiError, badRequest, publicUserSelect } from "@/lib/api";
+import { hashPassword } from "@/lib/auth/password";
 import { prisma } from "@/lib/prisma";
+import { Role } from "@/types/user";
 
 export async function GET() {
   try {
@@ -18,16 +20,23 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, role } = await request.json();
 
     if (!name || !email || !password) {
       return badRequest("name, email, and password are required");
     }
 
-    // SECURITY TODO: password is persisted in plain text. Hash it (argon2/bcrypt)
-    // before this endpoint is exposed to anything but local development.
+    if (role !== undefined && role !== Role.BUYER && role !== Role.MERCHANT) {
+      return badRequest("role must be BUYER or MERCHANT");
+    }
+
     const user = await prisma.user.create({
-      data: { name, email, password },
+      data: {
+        name,
+        email,
+        password: await hashPassword(password),
+        role: role ?? Role.BUYER,
+      },
       select: publicUserSelect,
     });
 

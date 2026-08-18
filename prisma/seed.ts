@@ -1,11 +1,8 @@
+import { hashPassword } from "../lib/auth/password";
 import { categories } from "../lib/placeholder";
 import { prisma } from "../lib/prisma";
 
-/**
- * Dev seed. Idempotent — safe to re-run.
- * Category names come from lib/placeholder.ts so the UI mock and the database
- * never drift apart.
- */
+// Idempotent dev seed; category names come from lib/placeholder.ts so mock and database never drift.
 async function main() {
   for (const category of categories) {
     await prisma.category.upsert({
@@ -15,15 +12,28 @@ async function main() {
     });
   }
 
-  // Local development account only. Plain-text password — see the SECURITY TODO
-  // in app/api/users/route.ts before this reaches any shared environment.
+  // Local development accounts only — the password is "password" for both.
+  const password = await hashPassword("password");
+
   const seller = await prisma.user.upsert({
     where: { email: "rena@kiosgenjreng.test" },
-    update: {},
+    update: { password, role: "MERCHANT" },
     create: {
       name: "Rena Azalea",
       email: "rena@kiosgenjreng.test",
-      password: "password",
+      password,
+      role: "MERCHANT",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "budi@kiosgenjreng.test" },
+    update: { password, role: "BUYER" },
+    create: {
+      name: "Budi Santoso",
+      email: "budi@kiosgenjreng.test",
+      password,
+      role: "BUYER",
     },
   });
 
