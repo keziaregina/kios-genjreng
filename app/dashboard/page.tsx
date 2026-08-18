@@ -1,18 +1,25 @@
 import React from "react";
 import { Bolt } from "lucide-react";
 import { inter } from "@/app/ui/font";
+import { getCurrentUser } from "@/lib/auth/guards";
 import { categories, popularly } from "@/lib/placeholder";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import SearchInput from "./components/SearchInput";
 
-const Dashboard = () => {
+// Prisma reads are invisible to Next's cache, so the greeting must render per request.
+export const dynamic = "force-dynamic";
+
+const Dashboard = async () => {
+  const user = await getCurrentUser();
+  const firstName = user?.name.split(" ")[0] ?? "Kamu";
+
   return (
     <div className={`px-[26px] py-[24px] ${inter.className}`}>
       <div className="flex justify-between items-center mb-[21px]">
         <div className="flex gap-0 flex-col font-bold">
-          <span className="text-[15px] text-gray-500">Hai Rena,</span>
+          <span className="text-[15px] text-gray-500">Hai {firstName},</span>
           <span className="text-lg text-white">mau cari apa?</span>
         </div>
         <Link href="/dashboard/settings">
@@ -45,9 +52,9 @@ const Dashboard = () => {
             Gitar baru bulan ini
           </div>
         </div>
-        <div className="w-full h-[218px] bg-linear-to-t from-button-primary to-[#D77FA4] relative">
-          <Image src={'/assets/terpopuler-guitar4.svg'} width={125} height={125} alt="" className="absolute right-0 -top-10 z-0"/>
-          <Image src={'/assets/terpopuler-guitar3.svg'} width={150} height={150} alt="" className="absolute right-9 -top-14 z-10"/>
+        <div className="w-full h-[218px] bg-linear-to-t from-button-primary to-gradient-pink-end relative">
+          <Image src={'/assets/terpopuler-guitar4.svg'} width={125} height={125} alt="Gitar baru bulan ini" className="absolute right-0 -top-10 z-0"/>
+          <Image src={'/assets/terpopuler-guitar3.svg'} width={150} height={150} alt="Gitar baru bulan ini" className="absolute right-9 -top-14 z-10"/>
         </div>
       </div>
       <div className="flex flex-col gap-[11px]">
