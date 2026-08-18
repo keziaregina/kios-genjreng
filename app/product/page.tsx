@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { inter } from "@/app/ui/font";
-import { getCategories, getProducts, getUsers } from "@/lib/queries";
+import { requireMerchant } from "@/lib/auth/guards";
+import { getCategories, getProducts } from "@/lib/queries";
 
 import ProductForm from "./components/Form";
 
@@ -20,11 +21,12 @@ const priceFormatter = new Intl.NumberFormat("id-ID", {
 });
 
 export default async function ProductPage() {
+  await requireMerchant();
+
   // Server Component: query the database directly. No HTTP hop to our own API.
-  const [products, categories, users] = await Promise.all([
+  const [products, categories] = await Promise.all([
     getProducts(),
     getCategories(),
-    getUsers(),
   ]);
 
   return (
@@ -55,7 +57,7 @@ export default async function ProductPage() {
         </ul>
       )}
 
-      <ProductForm categories={categories} users={users} />
+      <ProductForm categories={categories} />
     </div>
   );
 }

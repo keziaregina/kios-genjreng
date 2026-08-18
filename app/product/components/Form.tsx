@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import type { Category } from "@/types/category";
-import type { PublicUser } from "@/types/user";
 
 import { createProduct } from "../actions";
 
@@ -13,18 +12,16 @@ type ProductFormValues = {
   name: string;
   price: string;
   categoryId: string;
-  userId: string;
 };
 
 type ProductFormProps = {
   categories: Category[];
-  users: PublicUser[];
 };
 
 const fieldClass =
   "bg-quarternary text-text-primary rounded-xl px-4 py-3 text-sm font-semibold outline-none";
 
-const ProductForm = ({ categories, users }: ProductFormProps) => {
+const ProductForm = ({ categories }: ProductFormProps) => {
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
@@ -33,14 +30,13 @@ const ProductForm = ({ categories, users }: ProductFormProps) => {
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>();
 
-  const canSubmit = categories.length > 0 && users.length > 0;
+  const canSubmit = categories.length > 0;
 
   const onSubmit = handleSubmit(async (values) => {
     const result = await createProduct({
       name: values.name,
       price: Number(values.price),
       categoryId: Number(values.categoryId),
-      userId: Number(values.userId),
     });
 
     if (!result.ok) {
@@ -92,26 +88,11 @@ const ProductForm = ({ categories, users }: ProductFormProps) => {
         ))}
       </select>
 
-      <select
-        {...register("userId", { required: "Penjual wajib dipilih" })}
-        className={fieldClass}
-        defaultValue=""
-      >
-        <option value="" disabled>
-          Pilih penjual
-        </option>
-        {users.map((user) => (
-          <option key={user.id} value={user.id}>
-            {user.name}
-          </option>
-        ))}
-      </select>
-
       {serverError && <p className="text-button-primary text-xs">{serverError}</p>}
 
       {!canSubmit && (
         <p className="text-text-secondary text-xs">
-          Butuh minimal 1 kategori dan 1 user. Jalankan `pnpm prisma db seed`.
+          Butuh minimal 1 kategori. Jalankan `pnpm prisma db seed`.
         </p>
       )}
 

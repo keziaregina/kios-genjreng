@@ -2,20 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireMerchant } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
+import type { ActionResult } from "@/types/action";
 
 export type CreateProductInput = {
   name: string;
   price: number;
   categoryId: number;
-  userId: number;
 };
-
-export type ActionResult = { ok: true } | { ok: false; message: string };
 
 export async function createProduct(
   input: CreateProductInput,
 ): Promise<ActionResult> {
+  // Ownership comes from the session, never from the submitted form.
+  const session = await requireMerchant();
   const name = input.name?.trim();
 
   if (!name) return { ok: false, message: "Nama produk wajib diisi" };
@@ -23,7 +24,6 @@ export async function createProduct(
     return { ok: false, message: "Harga harus bilangan bulat >= 0" };
   }
   if (!input.categoryId) return { ok: false, message: "Kategori wajib dipilih" };
-  if (!input.userId) return { ok: false, message: "Penjual wajib dipilih" };
 
   try {
     await prisma.product.create({
@@ -31,7 +31,7 @@ export async function createProduct(
         name,
         price: input.price,
         categoryId: input.categoryId,
-        userId: input.userId,
+        userId: session.userId,
       },
     });
   } catch (error) {
@@ -40,5 +40,6 @@ export async function createProduct(
   }
 
   revalidatePath("/product");
+  revalidatePath("/dashboard/store");
   return { ok: true };
 }

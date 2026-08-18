@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { apiError, badRequest } from "@/lib/api";
+import { readSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { getProducts } from "@/lib/queries";
+import { Role } from "@/types/user";
 
 export async function GET() {
   try {
@@ -14,10 +16,20 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { name, price, categoryId, userId } = await request.json();
+    // External consumers sit outside the middleware matcher, so this route checks the session itself.
+    const session = await readSessionCookie();
 
-    if (!name || price === undefined || !categoryId || !userId) {
-      return badRequest("name, price, categoryId, and userId are required");
+    if (!session) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+    if (session.role !== Role.MERCHANT) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
+    const { name, price, categoryId } = await request.json();
+
+    if (!name || price === undefined || !categoryId) {
+      return badRequest("name, price, and categoryId are required");
     }
 
     if (!Number.isInteger(price) || price < 0) {
@@ -29,7 +41,7 @@ export async function POST(request: Request) {
         name,
         price,
         categoryId: Number(categoryId),
-        userId: Number(userId),
+        userId: session.userId,
       },
     });
 
