@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { apiError, badRequest } from "@/lib/api";
-import { readSessionCookie } from "@/lib/auth/session";
+import { apiError, badRequest, forbidden, unauthorized } from "@/lib/api";
+import { getSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
 import { getProducts } from "@/lib/queries";
 import { Role } from "@/types/user";
@@ -17,14 +17,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // External consumers sit outside the middleware matcher, so this route checks the session itself.
-    const session = await readSessionCookie();
+    const session = await getSession();
 
-    if (!session) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-    if (session.role !== Role.MERCHANT) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    if (!session) return unauthorized();
+    if (session.role !== Role.MERCHANT) return forbidden();
 
     const { name, price, categoryId } = await request.json();
 

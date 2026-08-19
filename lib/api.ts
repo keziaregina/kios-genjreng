@@ -22,6 +22,14 @@ export function badRequest(message: string) {
   return NextResponse.json({ message }, { status: 400 });
 }
 
+export function unauthorized(message = "Unauthorized") {
+  return NextResponse.json({ message }, { status: 401 });
+}
+
+export function forbidden(message = "Forbidden") {
+  return NextResponse.json({ message }, { status: 403 });
+}
+
 export function notFound(message: string) {
   return NextResponse.json({ message }, { status: 404 });
 }

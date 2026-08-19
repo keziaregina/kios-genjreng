@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 
-import { apiError, badRequest, publicUserSelect } from "@/lib/api";
+import { apiError, badRequest, publicUserSelect, unauthorized } from "@/lib/api";
+import { getSession } from "@/lib/auth/guards";
 import { hashPassword } from "@/lib/auth/password";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/types/user";
 
 export async function GET() {
   try {
+    // The full directory of names and emails is not public data.
+    if (!(await getSession())) return unauthorized();
+
     const users = await prisma.user.findMany({
       select: publicUserSelect,
       orderBy: { createdAt: "desc" },
