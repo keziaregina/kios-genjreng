@@ -1,65 +1,65 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import React, { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const SearchInput = () => {
-  const [search, setSearch] = useState("");
   const searchParams = useSearchParams();
-  const pathname = usePathname();
   const router = useRouter();
-  const params = new URLSearchParams(searchParams);
+  // Typing from the dashboard lands on the search page, so the target route is fixed.
+  // Seeded from the URL so the box still shows the term after a reload or a chip click.
+  const [search, setSearch] = useState(searchParams.get("query") ?? "");
 
-  const handleSearch = useDebouncedCallback((term: string) => {
+  const pushQuery = (term: string) => {
+    const params = new URLSearchParams(searchParams);
+
     if (term) {
       params.set("query", term);
     } else {
       params.delete("query");
     }
 
-    router.replace(`${pathname}?${params.toString()}`);
-  }, 1000);
+    router.replace(`/dashboard/search?${params.toString()}`);
+  };
+
+  const handleSearch = useDebouncedCallback(pushQuery, 500);
 
   const handleClearSearch = () => {
-    setSearch("")
-    params.delete("query");
-    router.replace(`${pathname}?${params.toString()}`);
-  }
+    setSearch("");
+    handleSearch.cancel();
+    pushQuery("");
+  };
 
   return (
-    <div className="w-full relative bg-quarternary rounded-xl text-gray-300 mb-[21px]">
-      {search == "" &&
-        <span className="absolute inset-0 text-sm font-semibold flex justify-center items-center w-full pointer-events-none">Cari merk apa?</span>
-      }
+    <div className="bg-quarternary text-text-primary relative mb-[21px] flex w-full items-center rounded-xl">
       <input
-        onChange={(e) => {
-          if (e.target.value != "") {
-            setSearch(e.target.value);
-          } else {
-            setSearch("")
-          }
-          handleSearch(e.target.value);
+        onChange={(event) => {
+          setSearch(event.target.value);
+          handleSearch(event.target.value);
         }}
         type="text"
         value={search}
         name="search"
-        className="outline-0 px-5 py-[15px] w-[80%] font-semibold text-sm"
+        aria-label="Cari gitar"
+        placeholder="Cari merk apa?"
+        className="placeholder:text-text-secondary w-full bg-transparent px-5 py-[15px] pr-12 text-sm font-semibold outline-0"
       />
-      {search != "" ? (
+      {search ? (
         <Button
-          onClick={() => handleClearSearch()} 
-          variant={"ghost"}
-          className="right-5 top-0 h-full py-0 my-0 bg-red-50">
-          <X/>
+          onClick={handleClearSearch}
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Hapus pencarian"
+          className="text-text-secondary absolute right-3 hover:bg-transparent"
+        >
+          <X />
         </Button>
       ) : (
-        
         <Search
-          color="gray"
-          className="absolute right-5 top-0 h-full"
+          className="text-text-secondary absolute right-5"
           size={15}
         />
       )}
