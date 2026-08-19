@@ -5,6 +5,7 @@ import React from "react";
 import { inter } from "@/app/ui/font";
 import { requireMerchant } from "@/lib/auth/guards";
 import { getProductsByUser } from "@/lib/queries";
+import { formatPrice } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Toko Saya",
@@ -12,12 +13,6 @@ export const metadata: Metadata = {
 
 // Prisma reads are invisible to Next's cache, so the page must render per request.
 export const dynamic = "force-dynamic";
-
-const priceFormatter = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
-  maximumFractionDigits: 0,
-});
 
 const StorePage = async () => {
   const session = await requireMerchant();
@@ -40,7 +35,7 @@ const StorePage = async () => {
             >
               <span className="font-semibold">{product.name}</span>
               <span className="text-text-secondary text-xs">
-                {product.category.name} · {priceFormatter.format(product.price)}
+                {product.category.name} · {formatPrice(product.price)}
               </span>
             </li>
           ))}
