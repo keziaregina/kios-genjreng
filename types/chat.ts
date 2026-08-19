@@ -11,6 +11,7 @@ export type ProductSuggestion = {
   name: string;
   price: number;
   category: string;
+  image: string | null;
 };
 
 // One rendered turn: the text plus the cards its markers resolved to.

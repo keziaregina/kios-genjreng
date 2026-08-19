@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import React from "react";
 
 import BackButton from "@/app/dashboard/profile/components/BackButton";
+import ProductImage from "@/components/ProductImage";
 import { inter } from "@/app/ui/font";
 import { parseId } from "@/lib/api";
 import { getProduct } from "@/lib/queries";
@@ -32,7 +33,14 @@ const ProductPage = async ({ params }: PageProps) => {
     <div className={`relative px-[26px] pt-[64px] pb-[24px] ${inter.className}`}>
       <BackButton />
 
-      <div className="bg-quarternary mb-[21px] h-[218px] w-full rounded-[10px]" />
+      <ProductImage
+        src={product.image}
+        alt={`Foto ${product.name}`}
+        sizes="100vw"
+        priority
+        iconSize={40}
+        className="mb-[21px] h-[218px] w-full rounded-[10px]"
+      />
 
       <h1 className="text-text-primary text-[20px] font-extrabold">{product.name}</h1>
       <p className="text-button-primary mt-1 text-[18px] font-bold">

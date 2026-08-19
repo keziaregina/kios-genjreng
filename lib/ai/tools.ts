@@ -72,6 +72,7 @@ export async function runTool(name: string, rawArguments: string): Promise<ToolO
       name: row.name,
       price: row.price,
       category: row.category.name,
+      image: row.image,
     }));
 
     return {
