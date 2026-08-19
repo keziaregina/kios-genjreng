@@ -1,61 +1,34 @@
 import type { Metadata } from "next";
 
+import BackButton from "@/app/dashboard/profile/components/BackButton";
 import { inter } from "@/app/ui/font";
 import { requireMerchant } from "@/lib/auth/guards";
-import { getCategories, getProducts } from "@/lib/queries";
+import { getCategories } from "@/lib/queries";
 
 import ProductForm from "./components/Form";
 
 export const metadata: Metadata = {
-  title: "Produk",
+  title: "Tambah Produk",
 };
 
-// Prisma reads are invisible to Next's cache, so without this the page would be
-// prerendered once at build time and never reflect later writes.
+// Prisma reads are invisible to Next's cache, so the page must render per request.
 export const dynamic = "force-dynamic";
-
-const priceFormatter = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
-  maximumFractionDigits: 0,
-});
 
 export default async function ProductPage() {
   await requireMerchant();
 
   // Server Component: query the database directly. No HTTP hop to our own API.
-  const [products, categories] = await Promise.all([
-    getProducts(),
-    getCategories(),
-  ]);
+  const categories = await getCategories();
 
   return (
     <div
-      className={`bg-primary min-h-screen px-[26px] py-[24px] ${inter.className}`}
+      className={`bg-primary relative min-h-screen px-[26px] pt-[64px] pb-[24px] ${inter.className}`}
     >
-      <h1 className="text-text-primary mb-[21px] text-[20px] font-extrabold">
-        Produk
-      </h1>
+      <BackButton />
 
-      {products.length === 0 ? (
-        <p className="text-text-secondary mb-[21px] text-sm">
-          Belum ada produk.
-        </p>
-      ) : (
-        <ul className="mb-[21px] flex flex-col gap-2">
-          {products.map((product) => (
-            <li
-              key={product.id}
-              className="bg-quarternary text-text-primary flex items-center justify-between rounded-xl px-4 py-3"
-            >
-              <span className="font-semibold">{product.name}</span>
-              <span className="text-text-secondary text-xs">
-                {product.category.name} · {priceFormatter.format(product.price)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <h1 className="text-text-primary mb-[21px] text-[20px] font-extrabold">
+        Tambah Produk
+      </h1>
 
       <ProductForm categories={categories} />
     </div>
