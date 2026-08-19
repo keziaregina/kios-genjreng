@@ -8,10 +8,11 @@ const productInclude = {
   user: { select: publicUserSelect },
 } as const;
 
-export function getProducts() {
+export function getProducts(limit?: number) {
   return prisma.product.findMany({
     include: productInclude,
     orderBy: { createdAt: "desc" },
+    take: limit,
   });
 }
 

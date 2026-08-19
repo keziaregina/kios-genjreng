@@ -1,19 +1,34 @@
 import React from "react";
 import { Bolt } from "lucide-react";
+import type { Metadata } from "next";
 import { inter } from "@/app/ui/font";
+import ProductImage from "@/components/ProductImage";
 import { getCurrentUser } from "@/lib/auth/guards";
-import { categories, popularly } from "@/lib/placeholder";
+import { getCategories, getProducts, searchProducts } from "@/lib/queries";
+import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import Link from "next/link";
+import ProductTile from "./components/ProductTile";
 import SearchInput from "./components/SearchInput";
 
-// Prisma reads are invisible to Next's cache, so the greeting must render per request.
+export const metadata: Metadata = {
+  title: "Beranda",
+};
+
+// Prisma reads are invisible to Next's cache, so the page must render per request.
 export const dynamic = "force-dynamic";
 
 const Dashboard = async () => {
-  const user = await getCurrentUser();
+  // One round trip for the whole page instead of four sequential awaits.
+  const [user, categories, latest, cheapest] = await Promise.all([
+    getCurrentUser(),
+    getCategories(),
+    getProducts(1),
+    searchProducts({ limit: 8 }),
+  ]);
+
   const firstName = user?.name.split(" ")[0] ?? "Kamu";
+  const newest = latest[0];
 
   return (
     <div className={`px-[26px] py-[24px] ${inter.className}`}>
@@ -30,58 +45,81 @@ const Dashboard = async () => {
       {/* Search */}
       <SearchInput />
 
-      <div className="flex flex-col gap-[11px] mb-[21px]">
-        <div className="text-text-primary font-semibold">Cari tipe-mu</div>
-        <div className="flex w-full overflow-x-scroll gap-[9px]">
-          {categories.map((item) => {
-            return (
-              <Button className="px-7 py-6 rounded-2xl" key={item.id}>
-                {item.name}
+      {categories.length > 0 && (
+        <div className="flex flex-col gap-[11px] mb-[21px]">
+          <div className="text-text-primary font-semibold">Cari tipe-mu</div>
+          <div className="flex w-full overflow-x-scroll gap-[9px]">
+            {/* Chips hand the category name to search through the same param its own filter reads. */}
+            {categories.map((category) => (
+              <Button asChild className="px-7 py-6 rounded-2xl" key={category.id}>
+                <Link
+                  href={`/dashboard/search?category=${encodeURIComponent(category.name)}`}
+                >
+                  {category.name}
+                </Link>
               </Button>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex flex-col gap-[11px] mb-[21px]">
-        <div>
-          <div className="text-text-primary font-extrabold text-[20px]">
-            Baru Datang Nih
+      {newest && (
+        <div className="flex flex-col gap-[11px] mb-[21px]">
+          <div>
+            <div className="text-text-primary font-extrabold text-[20px]">
+              Baru Datang Nih
+            </div>
+            <div className="text-text-secondary text-[12px]">
+              Gitar yang baru masuk
+            </div>
           </div>
-          <div className="text-text-secondary text-[12px]">
-            Gitar baru bulan ini
-          </div>
+          {/* The banner shows the newest row, so an empty catalogue hides it rather than faking stock. */}
+          <Link
+            href={`/dashboard/product/${newest.id}`}
+            aria-label={`Lihat detail ${newest.name}`}
+            className="w-full h-[218px] bg-linear-to-t from-button-primary to-gradient-pink-end rounded-2xl flex items-center gap-4 p-5 active:opacity-80"
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-text-primary truncate text-[18px] font-extrabold">
+                {newest.name}
+              </span>
+              <span className="text-text-primary text-[12px]">
+                {newest.category.name}
+              </span>
+              <span className="text-text-primary text-[16px] font-bold">
+                {formatPrice(newest.price)}
+              </span>
+            </div>
+            <ProductImage
+              src={newest.image}
+              alt={`Foto ${newest.name}`}
+              sizes="140px"
+              iconSize={40}
+              priority
+              className="h-[178px] w-[140px] rounded-2xl"
+            />
+          </Link>
         </div>
-        <div className="w-full h-[218px] bg-linear-to-t from-button-primary to-gradient-pink-end relative">
-          <Image src={'/assets/terpopuler-guitar4.svg'} width={125} height={125} alt="Gitar baru bulan ini" className="absolute right-0 -top-10 z-0"/>
-          <Image src={'/assets/terpopuler-guitar3.svg'} width={150} height={150} alt="Gitar baru bulan ini" className="absolute right-9 -top-14 z-10"/>
-        </div>
-      </div>
+      )}
+
       <div className="flex flex-col gap-[11px]">
         <div>
           <div className="text-text-primary font-extrabold text-[18px]">
             Terpopuler
           </div>
           <div className="text-text-secondary text-[12px]">
-            Berdasarkan rating user
+            Harga paling ramah kantong
           </div>
         </div>
-        <div className="flex gap-[18px] overflow-x-scroll overflow-y-hidden">
-          {popularly.map((item) => {
-            return (
-              <div key={item.id} className="pt-5 relative">
-                <Image
-                  src={item.image}
-                  width={100}
-                  height={100}
-                  alt={item.name}
-                  className="absolute inset-0"
-                />
-                <div className="h-[150px] w-[105px] bg-quarternary rounded-2xl" />
-              </div>
-            );
-          })}
-        </div>
+        {cheapest.length === 0 ? (
+          <p className="text-text-secondary text-sm">Belum ada produk.</p>
+        ) : (
+          <div className="flex gap-[18px] overflow-x-scroll overflow-y-hidden pb-2">
+            {cheapest.map((product) => (
+              <ProductTile key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
