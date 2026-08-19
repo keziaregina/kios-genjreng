@@ -30,6 +30,7 @@ model Product {
   id         Int      @id @default(autoincrement())
   name       String
   price      Int
+  image      String?
   categoryId Int
   userId     Int
   createdAt  DateTime @default(now())
