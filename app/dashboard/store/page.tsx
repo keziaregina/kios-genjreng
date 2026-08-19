@@ -1,8 +1,10 @@
+import { Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import React from "react";
 
 import { inter } from "@/app/ui/font";
+import ProductImage from "@/components/ProductImage";
 import { requireMerchant } from "@/lib/auth/guards";
 import { getProductsByUser } from "@/lib/queries";
 import { formatPrice } from "@/lib/utils";
@@ -29,14 +31,27 @@ const StorePage = async () => {
       ) : (
         <ul className="mb-[21px] flex flex-col gap-2">
           {products.map((product) => (
-            <li
-              key={product.id}
-              className="bg-quarternary text-text-primary flex items-center justify-between rounded-xl px-4 py-3"
-            >
-              <span className="font-semibold">{product.name}</span>
-              <span className="text-text-secondary text-xs">
-                {product.category.name} · {formatPrice(product.price)}
-              </span>
+            <li key={product.id}>
+              <Link
+                href={`/product/${product.id}/edit`}
+                aria-label={`Edit ${product.name}`}
+                className="bg-quarternary text-text-primary flex items-center gap-3 rounded-xl px-4 py-3 active:opacity-80"
+              >
+                <ProductImage
+                  src={product.image}
+                  alt={`Foto ${product.name}`}
+                  sizes="44px"
+                  iconSize={20}
+                  className="size-[44px] rounded-[10px]"
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate font-semibold">{product.name}</span>
+                  <span className="text-text-secondary text-xs">
+                    {product.category.name} · {formatPrice(product.price)}
+                  </span>
+                </div>
+                <Pencil size={16} className="text-text-secondary shrink-0" />
+              </Link>
             </li>
           ))}
         </ul>
