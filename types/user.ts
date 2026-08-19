@@ -9,8 +9,8 @@ export { Role } from "@/lib/generated/prisma/enums";
 /** Row shape of `User`. Derived from prisma/schema.prisma — never hand-edit. */
 export type User = UserModel;
 
-/** The only user shape allowed to cross the network — password stripped. */
-export type PublicUser = Omit<User, "password">;
+/** The only user shape allowed to cross the network — password and session bookkeeping stripped. */
+export type PublicUser = Omit<User, "password" | "tokenVersion">;
 
 /** `User` loaded with `include: { products: true }`. */
 export type UserWithProducts = User & {

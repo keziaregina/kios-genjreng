@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Store,
+  MonitorSmartphone,
   CircleQuestionMark,
   InfoIcon,
   Copyright,
@@ -23,7 +24,7 @@ import { getCurrentUser, requireUser } from "@/lib/auth/guards";
 import { Role } from "@/types/user";
 
 import BackButton from "./components/BackButton";
-import { becomeMerchant } from "./actions";
+import { becomeMerchant, logoutAllDevices } from "./actions";
 
 export const metadata: Metadata = {
   title: "Profil",
@@ -47,6 +48,7 @@ const buyerMenu: MenuItem[] = [
   { name: "Buka Toko", icon: Store, action: becomeMerchant },
   { name: "Privasi", icon: Lock },
   { name: "Keamanan", icon: ShieldCheck },
+  { name: "Keluar dari Semua Perangkat", icon: MonitorSmartphone, action: logoutAllDevices },
   { name: "Log Out", icon: Key, action: logout },
 ];
 
@@ -56,6 +58,7 @@ const merchantMenu: MenuItem[] = [
   { name: "Riwayat Pesanan", icon: Clock3 },
   { name: "Privasi", icon: Lock },
   { name: "Keamanan", icon: ShieldCheck },
+  { name: "Keluar dari Semua Perangkat", icon: MonitorSmartphone, action: logoutAllDevices },
   { name: "Log Out", icon: Key, action: logout },
 ];
 

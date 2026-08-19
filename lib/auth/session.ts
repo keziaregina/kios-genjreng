@@ -5,7 +5,11 @@ import { Role } from "@/types/user";
 
 export const SESSION_COOKIE = "session";
 
-export type SessionPayload = { userId: number; role: Role };
+export type SessionPayload = {
+  userId: number;
+  role: Role;
+  tokenVersion: number;
+};
 
 const MAX_AGE = 60 * 60 * 24 * 7;
 
@@ -19,7 +23,11 @@ function secret(): Uint8Array {
 }
 
 export async function encodeSession(payload: SessionPayload): Promise<string> {
-  return new SignJWT({ userId: payload.userId, role: payload.role })
+  return new SignJWT({
+    userId: payload.userId,
+    role: payload.role,
+    tokenVersion: payload.tokenVersion,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
@@ -36,13 +44,21 @@ export async function decodeSession(
     const { payload } = await jwtVerify(token, secret());
     const userId = payload.userId;
     const role = payload.role;
+    const tokenVersion = payload.tokenVersion;
 
     if (typeof userId !== "number" || !Number.isInteger(userId) || userId <= 0) {
       return null;
     }
     if (role !== Role.BUYER && role !== Role.MERCHANT) return null;
+    if (
+      typeof tokenVersion !== "number" ||
+      !Number.isInteger(tokenVersion) ||
+      tokenVersion < 0
+    ) {
+      return null;
+    }
 
-    return { userId, role };
+    return { userId, role, tokenVersion };
   } catch {
     return null;
   }

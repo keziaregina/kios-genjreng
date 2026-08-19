@@ -1,9 +1,16 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { Prisma } from "@/lib/generated/prisma/client";
+import { safeNextPath } from "@/lib/auth/next-path";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import {
+  checkLoginAttempts,
+  clearLoginFailures,
+  recordLoginFailure,
+} from "@/lib/auth/rate-limit";
 import { clearSessionCookie, setSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/types/action";
@@ -19,6 +26,7 @@ export type RegisterInput = {
 export type LoginInput = {
   email: string;
   password: string;
+  next?: string;
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,6 +34,13 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // The submitted role is untrusted input, so only the two enum members are accepted.
 function parseRole(raw: string): Role | null {
   return raw === Role.BUYER || raw === Role.MERCHANT ? raw : null;
+}
+
+// Failures are counted per client address and email so one attacker cannot lock out everyone.
+async function rateLimitKey(email: string): Promise<string> {
+  const store = await headers();
+  const forwarded = store.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return `${forwarded || "local"}:${email}`;
 }
 
 export async function register(input: RegisterInput): Promise<ActionResult> {
@@ -43,14 +58,13 @@ export async function register(input: RegisterInput): Promise<ActionResult> {
   }
   if (!role) return { ok: false, message: "Pilih dulu mau beli atau jualan" };
 
-  let userId: number;
+  let created: { id: number; tokenVersion: number };
 
   try {
-    const user = await prisma.user.create({
+    created = await prisma.user.create({
       data: { name, email, password: await hashPassword(password), role },
-      select: { id: true },
+      select: { id: true, tokenVersion: true },
     });
-    userId = user.id;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -62,7 +76,11 @@ export async function register(input: RegisterInput): Promise<ActionResult> {
     return { ok: false, message: "Gagal mendaftar" };
   }
 
-  await setSessionCookie({ userId, role });
+  await setSessionCookie({
+    userId: created.id,
+    role,
+    tokenVersion: created.tokenVersion,
+  });
   redirect("/dashboard");
 }
 
@@ -74,26 +92,48 @@ export async function login(input: LoginInput): Promise<ActionResult> {
     return { ok: false, message: "Email dan password wajib diisi" };
   }
 
+  const key = await rateLimitKey(email);
+  const rate = checkLoginAttempts(key);
+
+  if (!rate.allowed) {
+    return {
+      ok: false,
+      message: `Terlalu banyak percobaan gagal. Coba lagi dalam ${rate.retryAfterMinutes} menit`,
+    };
+  }
+
   // One message for both branches so the form never reveals which emails exist.
   const invalid = { ok: false, message: "Email atau password salah" } as const;
 
-  let user: { id: number; password: string; role: Role } | null;
+  let user: {
+    id: number;
+    password: string;
+    role: Role;
+    tokenVersion: number;
+  } | null;
 
   try {
     user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, password: true, role: true },
+      select: { id: true, password: true, role: true, tokenVersion: true },
     });
   } catch (error) {
     console.error("[login]", error);
     return { ok: false, message: "Gagal masuk" };
   }
 
-  if (!user) return invalid;
-  if (!(await verifyPassword(user.password, password))) return invalid;
+  if (!user || !(await verifyPassword(user.password, password))) {
+    recordLoginFailure(key);
+    return invalid;
+  }
 
-  await setSessionCookie({ userId: user.id, role: user.role });
-  redirect("/dashboard");
+  clearLoginFailures(key);
+  await setSessionCookie({
+    userId: user.id,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  });
+  redirect(safeNextPath(input.next));
 }
 
 export async function logout(): Promise<void> {

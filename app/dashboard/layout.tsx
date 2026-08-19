@@ -1,17 +1,17 @@
 import React from "react";
 
-import { getSession } from "@/lib/auth/guards";
-import { Role } from "@/types/user";
+import { requireUser } from "@/lib/auth/guards";
 
 import Navigation from "./components/Navigation";
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
-  const session = await getSession();
+  // Middleware only checks the signature, so the revocable check runs once here for every dashboard route.
+  const session = await requireUser();
 
   return (
     <div className="bg-primary flex min-h-screen w-full flex-col">
       <main className="flex-1 overflow-y-auto">{children}</main>
-      <Navigation role={session?.role ?? Role.BUYER} />
+      <Navigation role={session.role} />
     </div>
   );
 };
