@@ -1,12 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Category } from "@/types/category";
 
-import { createProduct } from "../actions";
+import { createProduct, updateProduct } from "../actions";
+import ImageField from "./ImageField";
 
 type ProductFormValues = {
   name: string;
@@ -14,79 +22,143 @@ type ProductFormValues = {
   categoryId: string;
 };
 
+type EditableProduct = {
+  id: number;
+  name: string;
+  price: number;
+  categoryId: number;
+  image: string | null;
+};
+
 type ProductFormProps = {
   categories: Category[];
+  product?: EditableProduct;
 };
 
 const fieldClass =
-  "bg-quarternary text-text-primary rounded-xl px-4 py-3 text-sm font-semibold outline-none";
+  "bg-quarternary text-text-primary focus:ring-button-primary/40 w-full rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:ring-2";
 
-const ProductForm = ({ categories }: ProductFormProps) => {
+const labelClass = "text-text-secondary text-xs font-semibold";
+
+const ProductForm = ({ categories, product }: ProductFormProps) => {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [image, setImage] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const {
     register,
+    control,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
-  } = useForm<ProductFormValues>();
+  } = useForm<ProductFormValues>({
+    defaultValues: {
+      name: product?.name ?? "",
+      price: product ? String(product.price) : "",
+      categoryId: product ? String(product.categoryId) : "",
+    },
+  });
 
   const canSubmit = categories.length > 0;
 
+  // A file input cannot ride react-hook-form, so the action takes FormData instead of an object.
   const onSubmit = handleSubmit(async (values) => {
-    const result = await createProduct({
-      name: values.name,
-      price: Number(values.price),
-      categoryId: Number(values.categoryId),
-    });
+    const formData = new FormData();
+    formData.set("name", values.name);
+    formData.set("price", values.price);
+    formData.set("categoryId", values.categoryId);
+    if (image) formData.set("image", image);
 
-    if (!result.ok) {
-      setServerError(result.message);
+    if (!product) {
+      const result = await createProduct(formData);
+      if (result && !result.ok) setServerError(result.message);
       return;
     }
 
-    setServerError(null);
-    reset();
+    formData.set("id", String(product.id));
+    if (removeImage) formData.set("removeImage", "1");
+
+    const result = await updateProduct(formData);
+    if (result && !result.ok) setServerError(result.message);
   });
 
+  const handleClearImage = () => {
+    setImage(null);
+    setRemoveImage(true);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3">
-      <input
-        {...register("name", { required: "Nama produk wajib diisi" })}
-        placeholder="Nama produk"
-        className={fieldClass}
-      />
-      {errors.name && (
-        <p className="text-button-primary text-xs">{errors.name.message}</p>
-      )}
+    <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="name" className={labelClass}>
+          Nama produk
+        </label>
+        <input
+          {...register("name", { required: "Nama produk wajib diisi" })}
+          id="name"
+          placeholder="Contoh: Yamaha F310"
+          className={fieldClass}
+        />
+        {errors.name && (
+          <p className="text-button-primary text-xs">{errors.name.message}</p>
+        )}
+      </div>
 
-      <input
-        {...register("price", {
-          required: "Harga wajib diisi",
-          min: { value: 0, message: "Harga tidak boleh negatif" },
-        })}
-        type="number"
-        min={0}
-        placeholder="Harga"
-        className={fieldClass}
-      />
-      {errors.price && (
-        <p className="text-button-primary text-xs">{errors.price.message}</p>
-      )}
+      <div className="flex flex-col gap-2">
+        <label htmlFor="price" className={labelClass}>
+          Harga (Rp)
+        </label>
+        <input
+          {...register("price", {
+            required: "Harga wajib diisi",
+            min: { value: 0, message: "Harga tidak boleh negatif" },
+          })}
+          id="price"
+          type="number"
+          min={0}
+          placeholder="1500000"
+          className={fieldClass}
+        />
+        {errors.price && (
+          <p className="text-button-primary text-xs">{errors.price.message}</p>
+        )}
+      </div>
 
-      <select
-        {...register("categoryId", { required: "Kategori wajib dipilih" })}
-        className={fieldClass}
-        defaultValue=""
-      >
-        <option value="" disabled>
-          Pilih kategori
-        </option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.name}
-          </option>
-        ))}
-      </select>
+      <div className="flex flex-col gap-2">
+        <label htmlFor="categoryId" className={labelClass}>
+          Kategori
+        </label>
+        <Controller
+          control={control}
+          name="categoryId"
+          rules={{ required: "Kategori wajib dipilih" }}
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id="categoryId">
+                <SelectValue placeholder="Pilih kategori" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={String(category.id)}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.categoryId && (
+          <p className="text-button-primary text-xs">{errors.categoryId.message}</p>
+        )}
+      </div>
+
+      <ImageField
+        file={image}
+        existingUrl={removeImage ? null : (product?.image ?? null)}
+        onChange={setImage}
+        onClear={handleClearImage}
+        onReject={setImageError}
+        error={imageError}
+      />
 
       {serverError && <p className="text-button-primary text-xs">{serverError}</p>}
 
@@ -96,8 +168,12 @@ const ProductForm = ({ categories }: ProductFormProps) => {
         </p>
       )}
 
-      <Button type="submit" disabled={isSubmitting || !canSubmit} className="py-6">
-        {isSubmitting ? "Menyimpan..." : "Tambah Produk"}
+      <Button type="submit" size="form" disabled={isSubmitting || !canSubmit}>
+        {isSubmitting
+          ? "Menyimpan..."
+          : product
+            ? "Simpan Perubahan"
+            : "Tambah Produk"}
       </Button>
     </form>
   );
