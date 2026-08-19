@@ -11,15 +11,27 @@ import type { ActionResult } from "@/types/action";
 
 const STORE_PATH = "/dashboard/store";
 
+type ProductFields = {
+  name: string;
+  price: number;
+  categoryId: number;
+  weight: number | null;
+  rating: number | null;
+  soldCount: number;
+};
+
 type ParsedFields =
-  | { ok: true; name: string; price: number; categoryId: number }
+  | ({ ok: true } & ProductFields)
   | { ok: false; message: string };
 
-// Create and update read the same four fields, so they share one parser.
+// Create and update read the same fields, so they share one parser.
 function parseFields(formData: FormData): ParsedFields {
   const name = String(formData.get("name") ?? "").trim();
   const priceRaw = String(formData.get("price") ?? "").trim();
   const categoryRaw = String(formData.get("categoryId") ?? "").trim();
+  const weightRaw = String(formData.get("weight") ?? "").trim();
+  const ratingRaw = String(formData.get("rating") ?? "").trim();
+  const soldRaw = String(formData.get("soldCount") ?? "").trim();
 
   if (!name) return { ok: false, message: "Nama produk wajib diisi" };
   if (!priceRaw) return { ok: false, message: "Harga wajib diisi" };
@@ -34,7 +46,22 @@ function parseFields(formData: FormData): ParsedFields {
     return { ok: false, message: "Kategori wajib dipilih" };
   }
 
-  return { ok: true, name, price, categoryId };
+  // Weight, rating, and sold count are optional, so an empty box clears the column.
+  const weight = weightRaw === "" ? null : Number(weightRaw);
+  const rating = ratingRaw === "" ? null : Number(ratingRaw);
+  const soldCount = soldRaw === "" ? 0 : Number(soldRaw);
+
+  if (weight !== null && (!Number.isInteger(weight) || weight < 0)) {
+    return { ok: false, message: "Berat harus bilangan bulat >= 0" };
+  }
+  if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 5)) {
+    return { ok: false, message: "Rating harus antara 0 dan 5" };
+  }
+  if (!Number.isInteger(soldCount) || soldCount < 0) {
+    return { ok: false, message: "Jumlah terjual harus bilangan bulat >= 0" };
+  }
+
+  return { ok: true, name, price, categoryId, weight, rating, soldCount };
 }
 
 type ReadImage = { path: string | null; message?: string };
@@ -76,6 +103,9 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
         name: fields.name,
         price: fields.price,
         categoryId: fields.categoryId,
+        weight: fields.weight,
+        rating: fields.rating,
+        soldCount: fields.soldCount,
         userId: session.userId,
         image: image.path,
       },
@@ -118,6 +148,9 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
         name: fields.name,
         price: fields.price,
         categoryId: fields.categoryId,
+        weight: fields.weight,
+        rating: fields.rating,
+        soldCount: fields.soldCount,
         image: nextImage,
       },
     });

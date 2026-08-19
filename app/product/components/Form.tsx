@@ -20,6 +20,9 @@ type ProductFormValues = {
   name: string;
   price: string;
   categoryId: string;
+  weight: string;
+  rating: string;
+  soldCount: string;
 };
 
 type EditableProduct = {
@@ -28,6 +31,9 @@ type EditableProduct = {
   price: number;
   categoryId: number;
   image: string | null;
+  weight: number | null;
+  rating: number | null;
+  soldCount: number;
 };
 
 type ProductFormProps = {
@@ -55,6 +61,9 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
       name: product?.name ?? "",
       price: product ? String(product.price) : "",
       categoryId: product ? String(product.categoryId) : "",
+      weight: product?.weight != null ? String(product.weight) : "",
+      rating: product?.rating != null ? String(product.rating) : "",
+      soldCount: product ? String(product.soldCount) : "",
     },
   });
 
@@ -66,6 +75,9 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
     formData.set("name", values.name);
     formData.set("price", values.price);
     formData.set("categoryId", values.categoryId);
+    formData.set("weight", values.weight);
+    formData.set("rating", values.rating);
+    formData.set("soldCount", values.soldCount);
     if (image) formData.set("image", image);
 
     if (!product) {
@@ -148,6 +160,68 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
         />
         {errors.categoryId && (
           <p className="text-button-primary text-xs">{errors.categoryId.message}</p>
+        )}
+      </div>
+
+      <div className="flex gap-[12px]">
+        <div className="flex flex-1 flex-col gap-2">
+          <label htmlFor="weight" className={labelClass}>
+            Berat satuan (kg)
+          </label>
+          <input
+            {...register("weight", {
+              min: { value: 0, message: "Berat tidak boleh negatif" },
+            })}
+            id="weight"
+            type="number"
+            min={0}
+            placeholder="15"
+            className={fieldClass}
+          />
+          {errors.weight && (
+            <p className="text-button-primary text-xs">{errors.weight.message}</p>
+          )}
+        </div>
+
+        <div className="flex flex-1 flex-col gap-2">
+          <label htmlFor="rating" className={labelClass}>
+            Rating (0-5)
+          </label>
+          <input
+            {...register("rating", {
+              min: { value: 0, message: "Rating minimal 0" },
+              max: { value: 5, message: "Rating maksimal 5" },
+            })}
+            id="rating"
+            type="number"
+            step="0.1"
+            min={0}
+            max={5}
+            placeholder="4.8"
+            className={fieldClass}
+          />
+          {errors.rating && (
+            <p className="text-button-primary text-xs">{errors.rating.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="soldCount" className={labelClass}>
+          Jumlah terjual
+        </label>
+        <input
+          {...register("soldCount", {
+            min: { value: 0, message: "Jumlah terjual tidak boleh negatif" },
+          })}
+          id="soldCount"
+          type="number"
+          min={0}
+          placeholder="0"
+          className={fieldClass}
+        />
+        {errors.soldCount && (
+          <p className="text-button-primary text-xs">{errors.soldCount.message}</p>
         )}
       </div>
 

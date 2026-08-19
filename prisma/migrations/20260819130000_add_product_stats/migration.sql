@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "rating" DOUBLE PRECISION,
+ADD COLUMN     "soldCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "weight" INTEGER;
