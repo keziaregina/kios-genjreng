@@ -2,6 +2,7 @@ import React from "react";
 
 import { requireUser } from "@/lib/auth/guards";
 
+import ChatSheet from "./components/ChatSheet";
 import Navigation from "./components/Navigation";
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
@@ -11,6 +12,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="bg-primary flex min-h-screen w-full flex-col">
       <main className="flex-1 overflow-y-auto">{children}</main>
+      <ChatSheet />
       <Navigation role={session.role} />
     </div>
   );
