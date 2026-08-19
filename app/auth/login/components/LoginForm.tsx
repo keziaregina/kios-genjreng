@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -17,6 +18,8 @@ const fieldClass =
   "text-text-primary bg-tertiary/35 p-5 rounded-2xl border-none focus:outline-none focus:ring-0 focus:outline-offset-0 font-bold text-xs";
 
 const LoginForm = () => {
+  // Middleware parks the blocked path in ?next= so the user lands where they aimed.
+  const next = useSearchParams().get("next") ?? undefined;
   const [serverError, setServerError] = useState<string | null>(null);
   const {
     register,
@@ -25,7 +28,7 @@ const LoginForm = () => {
   } = useForm<LoginFormValues>();
 
   const onSubmit = handleSubmit(async (values) => {
-    const result = await login(values);
+    const result = await login({ ...values, next });
 
     // Only a failure comes back — the action redirects on success.
     if (!result.ok) setServerError(result.message);
