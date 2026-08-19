@@ -1,3 +1,4 @@
+import { Prisma } from "@/lib/generated/prisma/client";
 import { publicUserSelect } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
@@ -27,5 +28,32 @@ export function getProductsByUser(userId: number) {
     where: { userId },
     include: productInclude,
     orderBy: { createdAt: "desc" },
+  });
+}
+
+// Chat tools and search share one query so a recommendation always matches what the catalogue shows.
+export function searchProducts(filter: {
+  category?: string;
+  keyword?: string;
+  maxPrice?: number;
+  limit?: number;
+}) {
+  const where: Prisma.ProductWhereInput = {};
+
+  if (filter.category) {
+    where.category = { name: { equals: filter.category, mode: "insensitive" } };
+  }
+  if (filter.keyword) {
+    where.name = { contains: filter.keyword, mode: "insensitive" };
+  }
+  if (filter.maxPrice !== undefined) {
+    where.price = { lte: filter.maxPrice };
+  }
+
+  return prisma.product.findMany({
+    where,
+    include: productInclude,
+    orderBy: { price: "asc" },
+    take: filter.limit ?? 8,
   });
 }
