@@ -15,3 +15,10 @@ const priceFormatter = new Intl.NumberFormat("id-ID", {
 export function formatPrice(price: number) {
   return priceFormatter.format(price)
 }
+
+// Marketplace listings round sales into a badge, so 40000 reads as "40rb+" instead of a raw count.
+export function formatSold(soldCount: number) {
+  if (soldCount < 1000) return String(soldCount)
+  const thousands = (soldCount / 1000).toFixed(1).replace(/\.0$/, "").replace(".", ",")
+  return `${thousands}rb+`
+}

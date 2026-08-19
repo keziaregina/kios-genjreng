@@ -116,7 +116,12 @@ const Dashboard = async () => {
         ) : (
           <div className="flex gap-[18px] overflow-x-scroll overflow-y-hidden pb-2">
             {cheapest.map((product) => (
-              <ProductTile key={product.id} product={product} />
+              <ProductTile
+                key={product.id}
+                product={product}
+                className="w-[150px] shrink-0"
+                imageClassName="h-[150px]"
+              />
             ))}
           </div>
         )}
