@@ -32,12 +32,22 @@ export function getProductsByUser(userId: number) {
   });
 }
 
+export type ProductSort = "termurah" | "terpopuler" | "terbaru";
+
+// Sold count decides popularity first because a 5.0 from one buyer is not a bestseller.
+const productOrderBy: Record<ProductSort, Prisma.ProductOrderByWithRelationInput[]> = {
+  termurah: [{ price: "asc" }],
+  terpopuler: [{ soldCount: "desc" }, { rating: "desc" }],
+  terbaru: [{ createdAt: "desc" }],
+};
+
 // Chat tools and search share one query so a recommendation always matches what the catalogue shows.
 export function searchProducts(filter: {
   category?: string;
   keyword?: string;
   maxPrice?: number;
   limit?: number;
+  sort?: ProductSort;
 }) {
   const where: Prisma.ProductWhereInput = {};
 
@@ -54,7 +64,7 @@ export function searchProducts(filter: {
   return prisma.product.findMany({
     where,
     include: productInclude,
-    orderBy: { price: "asc" },
+    orderBy: productOrderBy[filter.sort ?? "termurah"],
     take: filter.limit ?? 8,
   });
 }
