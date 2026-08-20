@@ -169,3 +169,12 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Horizontal chip and tile rows swipe on touch, so the scrollbar is noise on every platform. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

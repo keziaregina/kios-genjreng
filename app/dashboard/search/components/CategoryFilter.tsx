@@ -31,7 +31,7 @@ const CategoryFilter = ({
   activeCategory,
   query,
 }: CategoryFilterProps) => (
-  <div className="mb-[14px] flex w-full gap-[12px] overflow-x-scroll pb-1">
+  <div className="mb-[14px] flex w-full gap-[12px] overflow-x-scroll no-scrollbar pb-1">
     {categories.map((category) => {
       const isActive = category.name === activeCategory;
 

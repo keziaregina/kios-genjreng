@@ -48,7 +48,7 @@ const Dashboard = async () => {
       {categories.length > 0 && (
         <div className="flex flex-col gap-[11px] mb-[21px]">
           <div className="text-text-primary font-semibold">Cari tipe-mu</div>
-          <div className="flex w-full overflow-x-scroll gap-[9px]">
+          <div className="flex w-full overflow-x-scroll no-scrollbar gap-[9px]">
             {/* Chips hand the category name to search through the same param its own filter reads. */}
             {categories.map((category) => (
               <Button asChild className="px-7 py-6 rounded-2xl" key={category.id}>
@@ -114,7 +114,7 @@ const Dashboard = async () => {
         {cheapest.length === 0 ? (
           <p className="text-text-secondary text-sm">Belum ada produk.</p>
         ) : (
-          <div className="flex gap-[18px] overflow-x-scroll overflow-y-hidden pb-2">
+          <div className="flex gap-[18px] overflow-x-scroll overflow-y-hidden no-scrollbar pb-2">
             {cheapest.map((product) => (
               <ProductTile
                 key={product.id}
