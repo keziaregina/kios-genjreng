@@ -36,13 +36,19 @@ const centerItem: Record<Role, NavItem> = {
   [Role.MERCHANT]: { href: "/dashboard/store", label: "Store", icon: Store },
 };
 
-const Navigation = ({ role }: { role: Role }) => {
+type NavigationProps = {
+  role: Role;
+  cartCount?: number;
+};
+
+const Navigation = ({ role, cartCount = 0 }: NavigationProps) => {
   const pathname = usePathname();
 
   if (pathname === "/dashboard/profile") return null;
 
   const center = centerItem[role];
   const CenterIcon = center.icon;
+  const badge = center.href === "/dashboard/cart" && cartCount > 0;
 
   const renderTab = ({ href, label, icon: Icon }: NavItem) => {
     const active = pathname === href;
@@ -72,10 +78,15 @@ const Navigation = ({ role }: { role: Role }) => {
         {leadingItems.map(renderTab)}
         <Link
           href={center.href}
-          aria-label={center.label}
-          className="text-text-primary bg-button-secondary flex h-14 w-14 items-center justify-center rounded-md"
+          aria-label={badge ? `Keranjang, ${cartCount} barang` : center.label}
+          className="text-text-primary bg-button-secondary relative flex h-14 w-14 items-center justify-center rounded-md"
         >
           <CenterIcon />
+          {badge && (
+            <span className="bg-button-primary text-text-primary absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full text-[10px] font-bold">
+              {cartCount > 9 ? "9+" : cartCount}
+            </span>
+          )}
         </Link>
         {trailingItems.map(renderTab)}
       </div>
