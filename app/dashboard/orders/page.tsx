@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import React from "react";
 
-import { inter } from "@/app/ui/font";
+import PageContainer from "@/app/dashboard/components/PageContainer";
 import { requireUser } from "@/lib/auth/guards";
 import { getOrdersByBuyer } from "@/lib/queries";
 import { Role } from "@/types/user";
@@ -21,7 +21,7 @@ const OrdersPage = async () => {
   const orders = await getOrdersByBuyer(session.userId);
 
   return (
-    <div className={`px-[26px] py-[24px] ${inter.className}`}>
+    <PageContainer>
       <h1 className="text-text-primary mb-[21px] text-[20px] font-extrabold">
         Riwayat Pesanan
       </h1>
@@ -45,7 +45,7 @@ const OrdersPage = async () => {
           ))}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 };
 
