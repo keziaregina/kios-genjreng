@@ -4,6 +4,7 @@ import type {
   Product,
 } from "@/lib/generated/prisma/client";
 
+import type { Review } from "./review";
 import type { PublicUser } from "./user";
 
 // Re-exported from the standalone enums file so Edge code can read it without pulling in the Prisma client.
@@ -20,4 +21,5 @@ export type OrderWithRelations = Order & {
   items: (OrderItem & { product: Product })[];
   buyer: PublicUser;
   merchant: PublicUser;
+  reviews: Pick<Review, "productId">[];
 };

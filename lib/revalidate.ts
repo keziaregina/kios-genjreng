@@ -11,3 +11,10 @@ export function revalidateCart() {
   revalidatePath("/dashboard/cart");
   revalidatePath("/dashboard", "layout");
 }
+
+// A new review rewrites the product's rating, so both order surfaces and the product page go stale at once.
+export function revalidateReview(orderId: number, productId: number) {
+  revalidatePath("/dashboard/orders");
+  revalidatePath(`/dashboard/orders/${orderId}`);
+  revalidatePath(`/dashboard/product/${productId}`);
+}

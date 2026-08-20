@@ -74,6 +74,7 @@ const orderInclude = {
   items: { include: { product: true } },
   buyer: { select: publicUserSelect },
   merchant: { select: publicUserSelect },
+  reviews: { select: { productId: true } },
 } as const;
 
 export function getOrdersByBuyer(buyerId: number) {
@@ -95,6 +96,18 @@ export function getOrdersByMerchant(merchantId: number) {
 // Ownership is not filtered here; the page decides who may read the row.
 export function getOrder(id: number) {
   return prisma.order.findUnique({ where: { id }, include: orderInclude });
+}
+
+// One include shape for reviews so every surface reads the same graph.
+const reviewInclude = { buyer: { select: publicUserSelect } } as const;
+
+export function getProductReviews(productId: number, limit?: number) {
+  return prisma.review.findMany({
+    where: { productId },
+    include: reviewInclude,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 }
 
 // Cart rows join the live catalogue so the price a buyer sees is today's price, not last week's.
