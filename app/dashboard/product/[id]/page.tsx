@@ -6,8 +6,11 @@ import BackButton from "@/app/dashboard/profile/components/BackButton";
 import ProductImage from "@/components/ProductImage";
 import { inter } from "@/app/ui/font";
 import { parseId } from "@/lib/api";
+import { getSession } from "@/lib/auth/guards";
 import { getProduct } from "@/lib/queries";
 import { formatPrice } from "@/lib/utils";
+
+import BuyButton from "./components/BuyButton";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -26,8 +29,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 const ProductPage = async ({ params }: PageProps) => {
-  const product = await load(params);
+  const [product, session] = await Promise.all([load(params), getSession()]);
   if (!product) notFound();
+
+  // Nobody buys from their own shelf, so the seller sees the listing without the order controls.
+  const canBuy = session !== null && session.userId !== product.userId;
 
   return (
     <div className={`relative px-[26px] pt-[64px] pb-[24px] ${inter.className}`}>
@@ -56,7 +62,23 @@ const ProductPage = async ({ params }: PageProps) => {
           <dt className="text-text-secondary">Penjual</dt>
           <dd className="text-text-primary font-semibold">{product.user.name}</dd>
         </div>
+        <div className="flex justify-between">
+          <dt className="text-text-secondary">Stok</dt>
+          <dd className="text-text-primary font-semibold">
+            {product.stock > 0 ? `${product.stock} tersisa` : "Habis"}
+          </dd>
+        </div>
       </dl>
+
+      {canBuy && (
+        <div className="mt-[21px]">
+          <BuyButton
+            productId={product.id}
+            price={product.price}
+            stock={product.stock}
+          />
+        </div>
+      )}
     </div>
   );
 };
