@@ -68,3 +68,31 @@ export function searchProducts(filter: {
     take: filter.limit ?? 8,
   });
 }
+
+// Single include shape for orders so buyer history and merchant inbox never diverge.
+const orderInclude = {
+  items: { include: { product: true } },
+  buyer: { select: publicUserSelect },
+  merchant: { select: publicUserSelect },
+} as const;
+
+export function getOrdersByBuyer(buyerId: number) {
+  return prisma.order.findMany({
+    where: { buyerId },
+    include: orderInclude,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export function getOrdersByMerchant(merchantId: number) {
+  return prisma.order.findMany({
+    where: { merchantId },
+    include: orderInclude,
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+// Ownership is not filtered here; the page decides who may read the row.
+export function getOrder(id: number) {
+  return prisma.order.findUnique({ where: { id }, include: orderInclude });
+}
