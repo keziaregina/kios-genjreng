@@ -17,7 +17,7 @@ type ProductFields = {
   categoryId: number;
   weight: number | null;
   rating: number | null;
-  soldCount: number;
+  stock: number;
 };
 
 type ParsedFields =
@@ -31,7 +31,7 @@ function parseFields(formData: FormData): ParsedFields {
   const categoryRaw = String(formData.get("categoryId") ?? "").trim();
   const weightRaw = String(formData.get("weight") ?? "").trim();
   const ratingRaw = String(formData.get("rating") ?? "").trim();
-  const soldRaw = String(formData.get("soldCount") ?? "").trim();
+  const stockRaw = String(formData.get("stock") ?? "").trim();
 
   if (!name) return { ok: false, message: "Nama produk wajib diisi" };
   if (!priceRaw) return { ok: false, message: "Harga wajib diisi" };
@@ -46,10 +46,10 @@ function parseFields(formData: FormData): ParsedFields {
     return { ok: false, message: "Kategori wajib dipilih" };
   }
 
-  // Weight, rating, and sold count are optional, so an empty box clears the column.
+  // Weight, rating, and stock are optional, so an empty box clears the column.
   const weight = weightRaw === "" ? null : Number(weightRaw);
   const rating = ratingRaw === "" ? null : Number(ratingRaw);
-  const soldCount = soldRaw === "" ? 0 : Number(soldRaw);
+  const stock = stockRaw === "" ? 0 : Number(stockRaw);
 
   if (weight !== null && (!Number.isInteger(weight) || weight < 0)) {
     return { ok: false, message: "Berat harus bilangan bulat >= 0" };
@@ -57,11 +57,11 @@ function parseFields(formData: FormData): ParsedFields {
   if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 5)) {
     return { ok: false, message: "Rating harus antara 0 dan 5" };
   }
-  if (!Number.isInteger(soldCount) || soldCount < 0) {
-    return { ok: false, message: "Jumlah terjual harus bilangan bulat >= 0" };
+  if (!Number.isInteger(stock) || stock < 0) {
+    return { ok: false, message: "Stok harus bilangan bulat >= 0" };
   }
 
-  return { ok: true, name, price, categoryId, weight, rating, soldCount };
+  return { ok: true, name, price, categoryId, weight, rating, stock };
 }
 
 type ReadImage = { path: string | null; message?: string };
@@ -105,7 +105,7 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
         categoryId: fields.categoryId,
         weight: fields.weight,
         rating: fields.rating,
-        soldCount: fields.soldCount,
+        stock: fields.stock,
         userId: session.userId,
         image: image.path,
       },
@@ -150,7 +150,7 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
         categoryId: fields.categoryId,
         weight: fields.weight,
         rating: fields.rating,
-        soldCount: fields.soldCount,
+        stock: fields.stock,
         image: nextImage,
       },
     });

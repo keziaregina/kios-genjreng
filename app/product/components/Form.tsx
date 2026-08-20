@@ -22,7 +22,7 @@ type ProductFormValues = {
   categoryId: string;
   weight: string;
   rating: string;
-  soldCount: string;
+  stock: string;
 };
 
 type EditableProduct = {
@@ -33,7 +33,7 @@ type EditableProduct = {
   image: string | null;
   weight: number | null;
   rating: number | null;
-  soldCount: number;
+  stock: number;
 };
 
 type ProductFormProps = {
@@ -63,7 +63,7 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
       categoryId: product ? String(product.categoryId) : "",
       weight: product?.weight != null ? String(product.weight) : "",
       rating: product?.rating != null ? String(product.rating) : "",
-      soldCount: product ? String(product.soldCount) : "",
+      stock: product ? String(product.stock) : "",
     },
   });
 
@@ -77,7 +77,7 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
     formData.set("categoryId", values.categoryId);
     formData.set("weight", values.weight);
     formData.set("rating", values.rating);
-    formData.set("soldCount", values.soldCount);
+    formData.set("stock", values.stock);
     if (image) formData.set("image", image);
 
     if (!product) {
@@ -207,21 +207,21 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="soldCount" className={labelClass}>
-          Jumlah terjual
+        <label htmlFor="stock" className={labelClass}>
+          Stok
         </label>
         <input
-          {...register("soldCount", {
-            min: { value: 0, message: "Jumlah terjual tidak boleh negatif" },
+          {...register("stock", {
+            min: { value: 0, message: "Stok tidak boleh negatif" },
           })}
-          id="soldCount"
+          id="stock"
           type="number"
           min={0}
-          placeholder="0"
+          placeholder="10"
           className={fieldClass}
         />
-        {errors.soldCount && (
-          <p className="text-button-primary text-xs">{errors.soldCount.message}</p>
+        {errors.stock && (
+          <p className="text-button-primary text-xs">{errors.stock.message}</p>
         )}
       </div>
 
