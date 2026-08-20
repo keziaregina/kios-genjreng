@@ -57,12 +57,20 @@ const StorePage = async () => {
         </ul>
       )}
 
-      <Link
-        href="/product"
-        className="bg-button-primary text-text-primary inline-flex rounded-xl px-4 py-3 text-sm font-semibold"
-      >
-        Tambah Produk
-      </Link>
+      <div className="flex flex-wrap gap-[11px]">
+        <Link
+          href="/product"
+          className="bg-button-primary text-text-primary inline-flex rounded-xl px-4 py-3 text-sm font-semibold"
+        >
+          Tambah Produk
+        </Link>
+        <Link
+          href="/dashboard/store/orders"
+          className="bg-quarternary text-text-primary inline-flex rounded-xl px-4 py-3 text-sm font-semibold"
+        >
+          Pesanan Masuk
+        </Link>
+      </div>
     </div>
   );
 };

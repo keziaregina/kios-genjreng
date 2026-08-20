@@ -43,7 +43,7 @@ type MenuItem = {
 const buyerMenu: MenuItem[] = [
   { name: "Favorit", icon: Heart },
   { name: "Keranjang", icon: ShoppingCart },
-  { name: "Riwayat Pesanan", icon: Clock3 },
+  { name: "Riwayat Pesanan", icon: Clock3, url: "/dashboard/orders" },
   { name: "Alamat Tersimpan", icon: Bookmark },
   { name: "Buka Toko", icon: Store, action: becomeMerchant },
   { name: "Privasi", icon: Lock },
@@ -55,7 +55,7 @@ const buyerMenu: MenuItem[] = [
 const merchantMenu: MenuItem[] = [
   { name: "Toko Saya", icon: Store, url: "/dashboard/store" },
   { name: "Produk Saya", icon: Package, url: "/product" },
-  { name: "Riwayat Pesanan", icon: Clock3 },
+  { name: "Riwayat Pesanan", icon: Clock3, url: "/dashboard/store/orders" },
   { name: "Privasi", icon: Lock },
   { name: "Keamanan", icon: ShieldCheck },
   { name: "Keluar dari Semua Perangkat", icon: MonitorSmartphone, action: logoutAllDevices },
