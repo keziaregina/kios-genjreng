@@ -16,7 +16,6 @@ type ProductFields = {
   price: number;
   categoryId: number;
   weight: number | null;
-  rating: number | null;
   stock: number;
 };
 
@@ -30,7 +29,6 @@ function parseFields(formData: FormData): ParsedFields {
   const priceRaw = String(formData.get("price") ?? "").trim();
   const categoryRaw = String(formData.get("categoryId") ?? "").trim();
   const weightRaw = String(formData.get("weight") ?? "").trim();
-  const ratingRaw = String(formData.get("rating") ?? "").trim();
   const stockRaw = String(formData.get("stock") ?? "").trim();
 
   if (!name) return { ok: false, message: "Nama produk wajib diisi" };
@@ -46,22 +44,18 @@ function parseFields(formData: FormData): ParsedFields {
     return { ok: false, message: "Kategori wajib dipilih" };
   }
 
-  // Weight, rating, and stock are optional, so an empty box clears the column.
+  // Weight and stock are optional, so an empty box clears the column.
   const weight = weightRaw === "" ? null : Number(weightRaw);
-  const rating = ratingRaw === "" ? null : Number(ratingRaw);
   const stock = stockRaw === "" ? 0 : Number(stockRaw);
 
   if (weight !== null && (!Number.isInteger(weight) || weight < 0)) {
     return { ok: false, message: "Berat harus bilangan bulat >= 0" };
   }
-  if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 5)) {
-    return { ok: false, message: "Rating harus antara 0 dan 5" };
-  }
   if (!Number.isInteger(stock) || stock < 0) {
     return { ok: false, message: "Stok harus bilangan bulat >= 0" };
   }
 
-  return { ok: true, name, price, categoryId, weight, rating, stock };
+  return { ok: true, name, price, categoryId, weight, stock };
 }
 
 type ReadImage = { path: string | null; message?: string };
@@ -104,7 +98,6 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
         price: fields.price,
         categoryId: fields.categoryId,
         weight: fields.weight,
-        rating: fields.rating,
         stock: fields.stock,
         userId: session.userId,
         image: image.path,
@@ -149,7 +142,6 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
         price: fields.price,
         categoryId: fields.categoryId,
         weight: fields.weight,
-        rating: fields.rating,
         stock: fields.stock,
         image: nextImage,
       },

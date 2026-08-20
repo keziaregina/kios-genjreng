@@ -21,7 +21,6 @@ type ProductFormValues = {
   price: string;
   categoryId: string;
   weight: string;
-  rating: string;
   stock: string;
 };
 
@@ -32,7 +31,6 @@ type EditableProduct = {
   categoryId: number;
   image: string | null;
   weight: number | null;
-  rating: number | null;
   stock: number;
 };
 
@@ -62,7 +60,6 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
       price: product ? String(product.price) : "",
       categoryId: product ? String(product.categoryId) : "",
       weight: product?.weight != null ? String(product.weight) : "",
-      rating: product?.rating != null ? String(product.rating) : "",
       stock: product ? String(product.stock) : "",
     },
   });
@@ -76,7 +73,6 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
     formData.set("price", values.price);
     formData.set("categoryId", values.categoryId);
     formData.set("weight", values.weight);
-    formData.set("rating", values.rating);
     formData.set("stock", values.stock);
     if (image) formData.set("image", image);
 
@@ -163,47 +159,23 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
         )}
       </div>
 
-      <div className="flex gap-[12px]">
-        <div className="flex flex-1 flex-col gap-2">
-          <label htmlFor="weight" className={labelClass}>
-            Berat satuan (kg)
-          </label>
-          <input
-            {...register("weight", {
-              min: { value: 0, message: "Berat tidak boleh negatif" },
-            })}
-            id="weight"
-            type="number"
-            min={0}
-            placeholder="15"
-            className={fieldClass}
-          />
-          {errors.weight && (
-            <p className="text-button-primary text-xs">{errors.weight.message}</p>
-          )}
-        </div>
-
-        <div className="flex flex-1 flex-col gap-2">
-          <label htmlFor="rating" className={labelClass}>
-            Rating (0-5)
-          </label>
-          <input
-            {...register("rating", {
-              min: { value: 0, message: "Rating minimal 0" },
-              max: { value: 5, message: "Rating maksimal 5" },
-            })}
-            id="rating"
-            type="number"
-            step="0.1"
-            min={0}
-            max={5}
-            placeholder="4.8"
-            className={fieldClass}
-          />
-          {errors.rating && (
-            <p className="text-button-primary text-xs">{errors.rating.message}</p>
-          )}
-        </div>
+      <div className="flex flex-col gap-2">
+        <label htmlFor="weight" className={labelClass}>
+          Berat satuan (kg)
+        </label>
+        <input
+          {...register("weight", {
+            min: { value: 0, message: "Berat tidak boleh negatif" },
+          })}
+          id="weight"
+          type="number"
+          min={0}
+          placeholder="15"
+          className={fieldClass}
+        />
+        {errors.weight && (
+          <p className="text-button-primary text-xs">{errors.weight.message}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">

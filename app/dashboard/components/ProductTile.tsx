@@ -34,7 +34,7 @@ const ProductTile = ({
         priority={priority}
         className={cn("h-[168px] w-full rounded-[10px]", imageClassName)}
       />
-      {product.rating !== null && (
+      {product.rating !== null && product.reviewCount > 0 && (
         <span className="bg-primary/80 text-text-primary absolute bottom-2 left-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold">
           <Star size={10} className="fill-rating text-rating" />
           {product.rating.toFixed(1)}
