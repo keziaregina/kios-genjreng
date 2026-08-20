@@ -35,26 +35,29 @@ model User {
   buyerOrders    Order[]    @relation("BuyerOrders")
   merchantOrders Order[]    @relation("MerchantOrders")
   cartItems      CartItem[]
+  reviews        Review[]
 }
 
 model Product {
-  id         Int      @id @default(autoincrement())
-  name       String
-  price      Int
-  image      String?
-  weight     Int?
-  rating     Float?
-  soldCount  Int      @default(0)
-  stock      Int      @default(0)
-  categoryId Int
-  userId     Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String
+  price       Int
+  image       String?
+  weight      Int?
+  rating      Float?
+  reviewCount Int      @default(0)
+  soldCount   Int      @default(0)
+  stock       Int      @default(0)
+  categoryId  Int
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   category   Category    @relation(fields: [categoryId], references: [id])
   user       User        @relation(fields: [userId], references: [id])
   orderItems OrderItem[]
   cartItems  CartItem[]
+  reviews    Review[]
 
   @@index([categoryId])
   @@index([userId])
@@ -73,6 +76,7 @@ model Order {
   buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
   merchant User        @relation("MerchantOrders", fields: [merchantId], references: [id])
   items    OrderItem[]
+  reviews  Review[]
 
   @@index([buyerId])
   @@index([merchantId])
@@ -94,6 +98,26 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+// A review is proof of purchase, so it hangs off the order line it rates instead of the product alone.
+model Review {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  buyerId   Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  buyer   User    @relation(fields: [buyerId], references: [id])
+
+  @@unique([orderId, productId])
+  @@index([productId])
+  @@index([buyerId])
 }
 
 // Rows join the live product instead of copying it, because a cart is a wish list and an order is a receipt.
