@@ -96,3 +96,20 @@ export function getOrdersByMerchant(merchantId: number) {
 export function getOrder(id: number) {
   return prisma.order.findUnique({ where: { id }, include: orderInclude });
 }
+
+// Cart rows join the live catalogue so the price a buyer sees is today's price, not last week's.
+export const cartInclude = {
+  product: { include: productInclude },
+} as const;
+
+export function getCart(userId: number) {
+  return prisma.cartItem.findMany({
+    where: { userId },
+    include: cartInclude,
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export function getCartItemCount(userId: number) {
+  return prisma.cartItem.count({ where: { userId } });
+}
