@@ -32,8 +32,9 @@ model User {
   updatedAt    DateTime @updatedAt
 
   products       Product[]
-  buyerOrders    Order[]   @relation("BuyerOrders")
-  merchantOrders Order[]   @relation("MerchantOrders")
+  buyerOrders    Order[]    @relation("BuyerOrders")
+  merchantOrders Order[]    @relation("MerchantOrders")
+  cartItems      CartItem[]
 }
 
 model Product {
@@ -53,6 +54,7 @@ model Product {
   category   Category    @relation(fields: [categoryId], references: [id])
   user       User        @relation(fields: [userId], references: [id])
   orderItems OrderItem[]
+  cartItems  CartItem[]
 
   @@index([categoryId])
   @@index([userId])
@@ -91,6 +93,22 @@ model OrderItem {
   product Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
+  @@index([productId])
+}
+
+// Rows join the live product instead of copying it, because a cart is a wish list and an order is a receipt.
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
   @@index([productId])
 }
 
