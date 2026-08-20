@@ -1,0 +1,108 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import React from "react";
+
+import BackButton from "@/app/dashboard/profile/components/BackButton";
+import { inter } from "@/app/ui/font";
+import { parseId } from "@/lib/api";
+import { requireUser } from "@/lib/auth/guards";
+import { formatOrderDate } from "@/lib/orders";
+import { getOrder } from "@/lib/queries";
+import { formatPrice } from "@/lib/utils";
+import { Role } from "@/types/user";
+
+import StatusActions from "../components/StatusActions";
+import StatusBadge from "../components/StatusBadge";
+
+type PageProps = { params: Promise<{ id: string }> };
+
+export const metadata: Metadata = {
+  title: "Detail Pesanan",
+};
+
+// Prisma reads are invisible to Next's cache, so the page must render per request.
+export const dynamic = "force-dynamic";
+
+const OrderDetailPage = async ({ params }: PageProps) => {
+  const session = await requireUser();
+
+  const id = parseId((await params).id);
+  if (!id) notFound();
+
+  const order = await getOrder(id);
+  if (!order) notFound();
+
+  // An order only exists for its two parties; anyone else gets the same page as a missing row.
+  const side =
+    order.merchantId === session.userId
+      ? Role.MERCHANT
+      : order.buyerId === session.userId
+        ? Role.BUYER
+        : null;
+
+  if (!side) notFound();
+
+  const counterparty =
+    side === Role.MERCHANT
+      ? { label: "Pembeli", name: order.buyer.name }
+      : { label: "Penjual", name: order.merchant.name };
+
+  return (
+    <div className={`relative px-[26px] pt-[64px] pb-[24px] ${inter.className}`}>
+      <BackButton />
+
+      <div className="mb-[21px] flex items-center justify-between gap-2">
+        <h1 className="text-text-primary text-[20px] font-extrabold">
+          Pesanan #{order.id}
+        </h1>
+        <StatusBadge status={order.status} />
+      </div>
+
+      <ul className="mb-[21px] flex flex-col gap-2">
+        {order.items.map((item) => (
+          <li
+            key={item.id}
+            className="bg-quarternary flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+          >
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <Link
+                href={`/dashboard/product/${item.productId}`}
+                className="text-text-primary truncate text-sm font-semibold active:opacity-80"
+              >
+                {item.name}
+              </Link>
+              <span className="text-text-secondary text-xs">
+                {formatPrice(item.price)} × {item.quantity}
+              </span>
+            </div>
+            <span className="text-text-primary shrink-0 text-sm font-bold">
+              {formatPrice(item.price * item.quantity)}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <dl className="mb-[21px] flex flex-col gap-2 text-sm">
+        <div className="flex justify-between">
+          <dt className="text-text-secondary">{counterparty.label}</dt>
+          <dd className="text-text-primary font-semibold">{counterparty.name}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-text-secondary">Dipesan</dt>
+          <dd className="text-text-primary font-semibold">
+            {formatOrderDate(order.createdAt)}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-text-secondary">Total</dt>
+          <dd className="text-button-primary font-bold">{formatPrice(order.total)}</dd>
+        </div>
+      </dl>
+
+      <StatusActions orderId={order.id} status={order.status} side={side} />
+    </div>
+  );
+};
+
+export default OrderDetailPage;
