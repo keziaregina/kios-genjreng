@@ -10,7 +10,7 @@ import { getSession } from "@/lib/auth/guards";
 import { getProduct } from "@/lib/queries";
 import { formatPrice } from "@/lib/utils";
 
-import BuyButton from "./components/BuyButton";
+import ProductActions from "./components/ProductActions";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -72,7 +72,7 @@ const ProductPage = async ({ params }: PageProps) => {
 
       {canBuy && (
         <div className="mt-[21px]">
-          <BuyButton
+          <ProductActions
             productId={product.id}
             price={product.price}
             stock={product.stock}
