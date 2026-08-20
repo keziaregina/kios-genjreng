@@ -4,13 +4,15 @@ import React from "react";
 
 import BackButton from "@/app/dashboard/profile/components/BackButton";
 import ProductImage from "@/components/ProductImage";
+import StarRating from "@/components/StarRating";
 import { inter } from "@/app/ui/font";
 import { parseId } from "@/lib/api";
 import { getSession } from "@/lib/auth/guards";
-import { getProduct } from "@/lib/queries";
+import { getProduct, getProductReviews } from "@/lib/queries";
 import { formatPrice } from "@/lib/utils";
 
 import ProductActions from "./components/ProductActions";
+import ReviewList from "./components/ReviewList";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -32,6 +34,8 @@ const ProductPage = async ({ params }: PageProps) => {
   const [product, session] = await Promise.all([load(params), getSession()]);
   if (!product) notFound();
 
+  const reviews = await getProductReviews(product.id);
+
   // Nobody buys from their own shelf, so the seller sees the listing without the order controls.
   const canBuy = session !== null && session.userId !== product.userId;
 
@@ -52,6 +56,15 @@ const ProductPage = async ({ params }: PageProps) => {
       <p className="text-button-primary mt-1 text-[18px] font-bold">
         {formatPrice(product.price)}
       </p>
+
+      {product.rating !== null && (
+        <div className="mt-2 flex items-center gap-2">
+          <StarRating value={product.rating} size={14} />
+          <span className="text-text-secondary text-xs font-semibold">
+            {product.rating.toFixed(1)} · {product.reviewCount} ulasan
+          </span>
+        </div>
+      )}
 
       <dl className="mt-[21px] flex flex-col gap-2 text-sm">
         <div className="flex justify-between">
@@ -79,6 +92,8 @@ const ProductPage = async ({ params }: PageProps) => {
           />
         </div>
       )}
+
+      <ReviewList reviews={reviews} />
     </div>
   );
 };
