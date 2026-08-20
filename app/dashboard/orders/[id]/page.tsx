@@ -10,8 +10,10 @@ import { requireUser } from "@/lib/auth/guards";
 import { formatOrderDate } from "@/lib/orders";
 import { getOrder } from "@/lib/queries";
 import { formatPrice } from "@/lib/utils";
+import { OrderStatus } from "@/types/order";
 import { Role } from "@/types/user";
 
+import ReviewSection from "../components/ReviewSection";
 import StatusActions from "../components/StatusActions";
 import StatusBadge from "../components/StatusBadge";
 
@@ -101,6 +103,10 @@ const OrderDetailPage = async ({ params }: PageProps) => {
       </dl>
 
       <StatusActions orderId={order.id} status={order.status} side={side} />
+
+      {side === Role.BUYER && order.status === OrderStatus.COMPLETED && (
+        <ReviewSection order={order} />
+      )}
     </div>
   );
 };

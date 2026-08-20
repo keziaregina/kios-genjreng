@@ -7,6 +7,7 @@ import { getOrdersByBuyer } from "@/lib/queries";
 import { Role } from "@/types/user";
 
 import OrderCard from "./components/OrderCard";
+import ReviewCta from "./components/ReviewCta";
 import StatusActions from "./components/StatusActions";
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ const OrdersPage = async () => {
                 status={order.status}
                 side={Role.BUYER}
               />
+              <ReviewCta order={order} />
             </OrderCard>
           ))}
         </ul>
