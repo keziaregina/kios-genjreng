@@ -1,6 +1,9 @@
 import { OrderStatus } from "@/types/order";
 import { Role } from "@/types/user";
 
+// Direct buy and cart checkout must refuse the same absurd quantities, so the ceiling lives beside the other order rules.
+export const MAX_QUANTITY = 99;
+
 // Every legal move lives in one table so the buttons and the server guard can never disagree.
 const moves: Record<Role, Record<OrderStatus, OrderStatus[]>> = {
   [Role.MERCHANT]: {

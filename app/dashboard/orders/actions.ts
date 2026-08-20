@@ -4,14 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/guards";
-import { nextStatuses } from "@/lib/orders";
+import { MAX_QUANTITY, nextStatuses } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { revalidateOrders } from "@/lib/revalidate";
 import type { ActionResult } from "@/types/action";
 import { OrderStatus } from "@/types/order";
 import { Role } from "@/types/user";
-
-const MAX_QUANTITY = 99;
 
 // A misfiring button should not be able to open a hundred orders a minute.
 const orderLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
@@ -26,12 +25,6 @@ const FAILURES: Record<string, string> = {
 
 function failureMessage(error: unknown): string | undefined {
   return error instanceof Error ? FAILURES[error.message] : undefined;
-}
-
-function revalidateOrders(productIds: number[]) {
-  revalidatePath("/dashboard/orders");
-  revalidatePath("/dashboard/store/orders");
-  productIds.forEach((id) => revalidatePath(`/dashboard/product/${id}`));
 }
 
 export async function createOrder(
