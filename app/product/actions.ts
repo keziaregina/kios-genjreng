@@ -176,6 +176,12 @@ export async function deleteProduct(id: number): Promise<ActionResult> {
   const existing = await findOwnedProduct(id, session.userId);
   if (!existing) return { ok: false, message: "Produk tidak ditemukan" };
 
+  // Dropping a row an OrderItem still points at would rewrite that buyer's history.
+  const ordered = await prisma.orderItem.count({ where: { productId: id } });
+  if (ordered > 0) {
+    return { ok: false, message: "Produk sudah pernah dipesan, tidak bisa dihapus." };
+  }
+
   try {
     await prisma.product.delete({ where: { id } });
   } catch (error) {
