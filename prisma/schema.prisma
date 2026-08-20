@@ -13,6 +13,14 @@ enum Role {
   MERCHANT
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
@@ -23,7 +31,9 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  products Product[]
+  products       Product[]
+  buyerOrders    Order[]   @relation("BuyerOrders")
+  merchantOrders Order[]   @relation("MerchantOrders")
 }
 
 model Product {
@@ -34,16 +44,54 @@ model Product {
   weight     Int?
   rating     Float?
   soldCount  Int      @default(0)
+  stock      Int      @default(0)
   categoryId Int
   userId     Int
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  category Category @relation(fields: [categoryId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  category   Category    @relation(fields: [categoryId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
 
   @@index([categoryId])
   @@index([userId])
+}
+
+// One order belongs to one seller, so a multi-merchant cart splits into several rows at checkout.
+model Order {
+  id         Int         @id @default(autoincrement())
+  buyerId    Int
+  merchantId Int
+  status     OrderStatus @default(PENDING)
+  total      Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  merchant User        @relation("MerchantOrders", fields: [merchantId], references: [id])
+  items    OrderItem[]
+
+  @@index([buyerId])
+  @@index([merchantId])
+}
+
+// Name and price are copied, not joined, so renaming or repricing a product never rewrites history.
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  name      String
+  price     Int
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model Category {
