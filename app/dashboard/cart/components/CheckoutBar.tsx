@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { formatPrice } from "@/lib/utils";
 
 type CheckoutBarProps = {
@@ -26,15 +27,16 @@ type CheckoutBarProps = {
 
 // Ordering now happens on its own page, so this bar only quotes the goods and hands the buyer over.
 const CheckoutBar = ({ total, groupCount, blocked }: CheckoutBarProps) => {
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   const handleClear = (event: React.MouseEvent) => {
     event.preventDefault();
     startTransition(async () => {
       const result = await clearCart();
-      if (!result.ok) setError(result.message);
+      if (result.ok) toast.success("Keranjang dikosongkan");
+      else toast.error(result.message);
       setOpen(false);
     });
   };
@@ -89,7 +91,6 @@ const CheckoutBar = ({ total, groupCount, blocked }: CheckoutBarProps) => {
       {blocked && (
         <p className="text-button-primary text-xs">Ada barang yang stoknya tidak cukup</p>
       )}
-      {error && <p className="text-button-primary text-xs">{error}</p>}
     </div>
   );
 };

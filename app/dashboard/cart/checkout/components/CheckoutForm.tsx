@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from "react";
 
 import { checkout } from "@/app/dashboard/cart/actions";
+import { useToast } from "@/components/ui/toast";
 import {
   DEFAULT_COURIER_ID,
   findCourier,
@@ -44,8 +45,8 @@ const CheckoutForm = ({ groups, addresses }: CheckoutFormProps) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     PaymentMethod.COD,
   );
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   // Another tab can add a merchant between renders, so a missing draft falls back instead of crashing.
   const draftFor = (merchantId: number) =>
@@ -72,11 +73,10 @@ const CheckoutForm = ({ groups, addresses }: CheckoutFormProps) => {
 
   const handleSubmit = () => {
     if (addressId === null) {
-      setError("Pilih alamat pengiriman dulu");
+      toast.error("Pilih alamat pengiriman dulu");
       return;
     }
 
-    setError(null);
     startTransition(async () => {
       const result = await checkout({
         addressId,
@@ -85,7 +85,7 @@ const CheckoutForm = ({ groups, addresses }: CheckoutFormProps) => {
       });
 
       // Checkout redirects on success, so only the failure branch ever comes back here.
-      if (result && !result.ok) setError(result.message);
+      if (result && !result.ok) toast.error(result.message);
     });
   };
 
@@ -134,7 +134,6 @@ const CheckoutForm = ({ groups, addresses }: CheckoutFormProps) => {
         groupCount={groups.length}
         pending={pending}
         disabled={addresses.length === 0}
-        error={error}
         onSubmit={handleSubmit}
       />
     </div>

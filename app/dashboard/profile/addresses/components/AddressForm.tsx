@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/toast";
 import { ADDRESS_FIELDS, MAX_ADDRESS_NOTE_LENGTH } from "@/lib/addresses";
 import type { Address, AddressInput } from "@/types/address";
 
@@ -21,6 +23,8 @@ const labelClass = "text-text-secondary text-xs font-semibold";
 
 const AddressForm = ({ address }: AddressFormProps) => {
   const [serverError, setServerError] = useState<string | null>(null);
+  const router = useRouter();
+  const toast = useToast();
   const {
     register,
     control,
@@ -41,6 +45,7 @@ const AddressForm = ({ address }: AddressFormProps) => {
     },
   });
 
+  // The action returns instead of redirecting, so the toast still exists when the list renders.
   const onSubmit = handleSubmit(async (values) => {
     setServerError(null);
 
@@ -48,7 +53,13 @@ const AddressForm = ({ address }: AddressFormProps) => {
       ? await updateAddress(address.id, values)
       : await createAddress(values);
 
-    if (result && !result.ok) setServerError(result.message);
+    if (!result.ok) {
+      setServerError(result.message);
+      return;
+    }
+
+    toast.success(address ? "Alamat diperbarui" : "Alamat disimpan");
+    router.push("/dashboard/profile/addresses");
   });
 
   return (

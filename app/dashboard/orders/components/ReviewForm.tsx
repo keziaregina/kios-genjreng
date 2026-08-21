@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 
 import { submitReview } from "@/app/dashboard/orders/actions";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { MAX_COMMENT_LENGTH } from "@/lib/reviews";
 
 import StarInput from "./StarInput";
@@ -24,6 +25,7 @@ const fieldClass =
 const ReviewForm = ({ orderId, productId, productName }: ReviewFormProps) => {
   const [rating, setRating] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
+  const toast = useToast();
   const {
     register,
     handleSubmit,
@@ -45,7 +47,8 @@ const ReviewForm = ({ orderId, productId, productName }: ReviewFormProps) => {
       comment: values.comment,
     });
 
-    if (!result.ok) setServerError(result.message);
+    if (result.ok) toast.success("Ulasan terkirim");
+    else setServerError(result.message);
   });
 
   return (

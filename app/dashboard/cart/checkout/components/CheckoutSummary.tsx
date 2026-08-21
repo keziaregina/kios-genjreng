@@ -13,7 +13,6 @@ type CheckoutSummaryProps = {
   groupCount: number;
   pending: boolean;
   disabled: boolean;
-  error: string | null;
   onSubmit: () => void;
 };
 
@@ -32,7 +31,6 @@ const CheckoutSummary = ({
   groupCount,
   pending,
   disabled,
-  error,
   onSubmit,
 }: CheckoutSummaryProps) => (
   <div className="bg-primary sticky bottom-0 flex flex-col gap-2 pt-[11px]">
@@ -65,8 +63,6 @@ const CheckoutSummary = ({
     >
       {pending ? "Memproses..." : `Bayar · ${formatPrice(total)}`}
     </Button>
-
-    {error && <p className="text-button-primary text-xs">{error}</p>}
   </div>
 );
 

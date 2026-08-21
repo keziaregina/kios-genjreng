@@ -7,6 +7,7 @@ import { removeCartItem, updateCartItemQuantity } from "@/app/dashboard/cart/act
 import ProductImage from "@/components/ProductImage";
 import QuantityStepper from "@/components/QuantityStepper";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { cartItemTotal, hasStockIssue } from "@/lib/cart";
 import { formatPrice } from "@/lib/utils";
 import type { CartItemWithProduct } from "@/types/cart";
@@ -14,8 +15,8 @@ import type { CartItemWithProduct } from "@/types/cart";
 // The server owns the real quantity, so the row keeps a local copy only to stop the stepper feeling laggy.
 const CartItemRow = ({ item }: { item: CartItemWithProduct }) => {
   const [quantity, setQuantity] = useState(item.quantity);
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   const product = item.product;
   const soldOut = product.stock === 0;
@@ -24,21 +25,20 @@ const CartItemRow = ({ item }: { item: CartItemWithProduct }) => {
   const changeQuantity = (next: number) => {
     const previous = quantity;
     setQuantity(next);
-    setError(null);
     startTransition(async () => {
       const result = await updateCartItemQuantity(item.id, next);
       if (!result.ok) {
         setQuantity(previous);
-        setError(result.message);
+        toast.error(result.message);
       }
     });
   };
 
   const handleRemove = () => {
-    setError(null);
     startTransition(async () => {
       const result = await removeCartItem(item.id);
-      if (!result.ok) setError(result.message);
+      if (result.ok) toast.success("Barang dihapus dari keranjang");
+      else toast.error(result.message);
     });
   };
 
@@ -92,7 +92,6 @@ const CartItemRow = ({ item }: { item: CartItemWithProduct }) => {
       {shortStock && (
         <p className="text-button-primary text-xs">Stok tidak mencukupi</p>
       )}
-      {error && <p className="text-button-primary text-xs">{error}</p>}
     </li>
   );
 };

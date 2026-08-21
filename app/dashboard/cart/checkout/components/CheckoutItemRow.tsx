@@ -5,6 +5,7 @@ import React, { useState, useTransition } from "react";
 import { updateCartItemQuantity } from "@/app/dashboard/cart/actions";
 import ProductImage from "@/components/ProductImage";
 import QuantityStepper from "@/components/QuantityStepper";
+import { useToast } from "@/components/ui/toast";
 import { cartItemTotal } from "@/lib/cart";
 import { formatPrice } from "@/lib/utils";
 import type { CartItemWithProduct } from "@/types/cart";
@@ -22,8 +23,8 @@ function specLine(product: CartItemWithProduct["product"]) {
 
 const CheckoutItemRow = ({ item }: { item: CartItemWithProduct }) => {
   const [quantity, setQuantity] = useState(item.quantity);
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   const product = item.product;
   const specs = specLine(product);
@@ -31,12 +32,11 @@ const CheckoutItemRow = ({ item }: { item: CartItemWithProduct }) => {
   const changeQuantity = (next: number) => {
     const previous = quantity;
     setQuantity(next);
-    setError(null);
     startTransition(async () => {
       const result = await updateCartItemQuantity(item.id, next);
       if (!result.ok) {
         setQuantity(previous);
-        setError(result.message);
+        toast.error(result.message);
       }
     });
   };
@@ -75,7 +75,6 @@ const CheckoutItemRow = ({ item }: { item: CartItemWithProduct }) => {
         />
       </div>
 
-      {error && <p className="text-button-primary text-xs">{error}</p>}
     </li>
   );
 };

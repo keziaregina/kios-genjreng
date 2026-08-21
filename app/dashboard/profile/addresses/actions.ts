@@ -1,7 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
 import {
   ADDRESS_FIELDS,
   MAX_ADDRESSES,
@@ -14,8 +12,6 @@ import { createRateLimiter } from "@/lib/rate-limit";
 import { revalidateAddresses } from "@/lib/revalidate";
 import type { ActionResult } from "@/types/action";
 import type { AddressInput } from "@/types/address";
-
-const ADDRESSES_PATH = "/dashboard/profile/addresses";
 
 // A stuck save button should not be able to fill the list a hundred times a minute.
 const addressLimiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
@@ -97,7 +93,7 @@ export async function createAddress(input: AddressInput): Promise<ActionResult> 
 
   addressLimiter.record(`address:${session.userId}`);
   revalidateAddresses();
-  redirect(ADDRESSES_PATH);
+  return { ok: true };
 }
 
 export async function updateAddress(
@@ -145,7 +141,7 @@ export async function updateAddress(
 
   addressLimiter.record(`address:${session.userId}`);
   revalidateAddresses();
-  redirect(ADDRESSES_PATH);
+  return { ok: true };
 }
 
 export async function deleteAddress(id: number): Promise<ActionResult> {

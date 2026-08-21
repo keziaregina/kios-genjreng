@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
+
+import { ToastProvider } from "@/components/ui/toast";
+
 import "./globals.css";
 
 const interFont = Inter({
@@ -32,7 +35,8 @@ export default function RootLayout({
       <body
         className={`${interFont.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        {/* Toasts outlive route changes, so the provider sits above every page instead of inside one. */}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );
