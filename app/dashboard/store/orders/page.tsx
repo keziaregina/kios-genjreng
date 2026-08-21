@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import React from "react";
 
+import PageContainer from "@/app/dashboard/components/PageContainer";
 import OrderCard from "@/app/dashboard/orders/components/OrderCard";
+import OrderShipping from "@/app/dashboard/orders/components/OrderShipping";
 import StatusActions from "@/app/dashboard/orders/components/StatusActions";
-import { inter } from "@/app/ui/font";
 import { requireMerchant } from "@/lib/auth/guards";
 import { getOrdersByMerchant } from "@/lib/queries";
 import { Role } from "@/types/user";
@@ -20,7 +21,7 @@ const StoreOrdersPage = async () => {
   const orders = await getOrdersByMerchant(session.userId);
 
   return (
-    <div className={`px-[26px] py-[24px] ${inter.className}`}>
+    <PageContainer>
       <h1 className="text-text-primary mb-[21px] text-[20px] font-extrabold">
         Pesanan Masuk
       </h1>
@@ -35,6 +36,7 @@ const StoreOrdersPage = async () => {
               order={order}
               counterparty={`Pembeli: ${order.buyer.name}`}
             >
+              <OrderShipping order={order} />
               <StatusActions
                 orderId={order.id}
                 status={order.status}
@@ -44,7 +46,7 @@ const StoreOrdersPage = async () => {
           ))}
         </ul>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

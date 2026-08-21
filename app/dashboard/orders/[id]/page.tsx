@@ -3,16 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import React from "react";
 
+import PageContainer from "@/app/dashboard/components/PageContainer";
 import BackButton from "@/app/dashboard/profile/components/BackButton";
-import { inter } from "@/app/ui/font";
 import { parseId } from "@/lib/api";
 import { requireUser } from "@/lib/auth/guards";
-import { formatOrderDate } from "@/lib/orders";
+import { PAYMENT_LABEL, formatOrderDate } from "@/lib/orders";
 import { getOrder } from "@/lib/queries";
 import { formatPrice } from "@/lib/utils";
 import { OrderStatus } from "@/types/order";
 import { Role } from "@/types/user";
 
+import OrderShipping from "../components/OrderShipping";
 import ReviewSection from "../components/ReviewSection";
 import StatusActions from "../components/StatusActions";
 import StatusBadge from "../components/StatusBadge";
@@ -51,7 +52,7 @@ const OrderDetailPage = async ({ params }: PageProps) => {
       : { label: "Penjual", name: order.merchant.name };
 
   return (
-    <div className={`relative px-[26px] pt-[64px] pb-[24px] ${inter.className}`}>
+    <PageContainer className="relative pt-[64px]">
       <BackButton />
 
       <div className="mb-[21px] flex items-center justify-between gap-2">
@@ -85,6 +86,10 @@ const OrderDetailPage = async ({ params }: PageProps) => {
         ))}
       </ul>
 
+      <div className="border-divider mb-[21px] border-y py-[12px]">
+        <OrderShipping order={order} />
+      </div>
+
       <dl className="mb-[21px] flex flex-col gap-2 text-sm">
         <div className="flex justify-between">
           <dt className="text-text-secondary">{counterparty.label}</dt>
@@ -97,6 +102,38 @@ const OrderDetailPage = async ({ params }: PageProps) => {
           </dd>
         </div>
         <div className="flex justify-between">
+          <dt className="text-text-secondary">Pembayaran</dt>
+          <dd className="text-text-primary font-semibold">
+            {PAYMENT_LABEL[order.paymentMethod]}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-text-secondary">Total barang</dt>
+          <dd className="text-text-primary font-semibold">
+            {formatPrice(order.subtotal)}
+          </dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-text-secondary">
+            Ongkos kirim
+            {order.shippingCourier ? ` · ${order.shippingCourier}` : ""}
+          </dt>
+          <dd className="text-text-primary font-semibold">
+            {formatPrice(order.shippingCost)}
+          </dd>
+        </div>
+        {order.shippingEta && (
+          <p className="text-text-secondary text-xs">{order.shippingEta}</p>
+        )}
+        {order.protectionFee > 0 && (
+          <div className="flex justify-between">
+            <dt className="text-text-secondary">Perlindungan ekstra</dt>
+            <dd className="text-text-primary font-semibold">
+              {formatPrice(order.protectionFee)}
+            </dd>
+          </div>
+        )}
+        <div className="flex justify-between">
           <dt className="text-text-secondary">Total</dt>
           <dd className="text-button-primary font-bold">{formatPrice(order.total)}</dd>
         </div>
@@ -107,7 +144,7 @@ const OrderDetailPage = async ({ params }: PageProps) => {
       {side === Role.BUYER && order.status === OrderStatus.COMPLETED && (
         <ReviewSection order={order} />
       )}
-    </div>
+    </PageContainer>
   );
 };
 
