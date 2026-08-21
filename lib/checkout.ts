@@ -18,7 +18,17 @@ export const COURIERS: Courier[] = [
   { id: "pos", name: "Pos Kios", cost: 12000, eta: "Paket akan tiba dalam 3 hari" },
 ];
 
-export const DEFAULT_COURIER_ID = COURIERS[0].id;
+export const CHEAPEST_COURIER = COURIERS.reduce((low, courier) =>
+  courier.cost < low.cost ? courier : low,
+);
+
+// Checkout opens on the same courier the cart quoted, so the total never jumps between the two screens.
+export const DEFAULT_COURIER_ID = CHEAPEST_COURIER.id;
+
+// The cart quotes shipping before a courier is picked, so it shows the floor price the buyer can still get.
+export function shippingEstimate(merchantCount: number) {
+  return CHEAPEST_COURIER.cost * merchantCount;
+}
 
 export function findCourier(id: string): Courier | undefined {
   return COURIERS.find((courier) => courier.id === id);
