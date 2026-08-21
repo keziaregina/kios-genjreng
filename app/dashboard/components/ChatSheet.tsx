@@ -18,7 +18,7 @@ import type { ChatBubble } from "@/types/chat";
 import { sendChatMessage } from "../actions";
 import ChatPanel from "./ChatPanel";
 
-const HIDDEN_PATHS = ["/dashboard/profile"];
+const HIDDEN_PATHS = ["/dashboard/profile", "/dashboard/cart"];
 
 // The product detail page ends in a pinned buy bar, so the floating bubble would land on top of it.
 const HIDDEN_PREFIXES = ["/dashboard/product/"];

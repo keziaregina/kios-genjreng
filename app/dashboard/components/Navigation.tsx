@@ -45,7 +45,11 @@ const Navigation = ({ role, cartCount = 0 }: NavigationProps) => {
   const pathname = usePathname();
 
   // The product detail page pins its own buy bar to the bottom, so two stacked bars never fight for it.
-  if (pathname === "/dashboard/profile" || pathname.startsWith("/dashboard/product/")) {
+  if (
+    pathname === "/dashboard/profile" ||
+    pathname === "/dashboard/cart" ||
+    pathname.startsWith("/dashboard/product/")
+  ) {
     return null;
   }
 
