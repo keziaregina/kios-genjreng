@@ -1,8 +1,19 @@
-import { OrderStatus } from "@/types/order";
+import { OrderStatus, PaymentMethod } from "@/types/order";
 import { Role } from "@/types/user";
 
 // Direct buy and cart checkout must refuse the same absurd quantities, so the ceiling lives beside the other order rules.
 export const MAX_QUANTITY = 99;
+
+// No gateway is wired up yet, so a method is a promise about how the buyer will pay on delivery day.
+export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
+  [PaymentMethod.COD]: "Bayar di Tempat (COD)",
+  [PaymentMethod.TRANSFER]: "Transfer Bank",
+};
+
+export const PAYMENT_DESCRIPTION: Record<PaymentMethod, string> = {
+  [PaymentMethod.COD]: "Bayar tunai saat barang sampai",
+  [PaymentMethod.TRANSFER]: "Transfer manual ke rekening penjual",
+};
 
 // Every legal move lives in one table so the buttons and the server guard can never disagree.
 const moves: Record<Role, Record<OrderStatus, OrderStatus[]>> = {

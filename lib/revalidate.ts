@@ -12,6 +12,12 @@ export function revalidateCart() {
   revalidatePath("/dashboard", "layout");
 }
 
+// Checkout reads the same rows the address list writes, so editing one address refreshes both screens.
+export function revalidateAddresses() {
+  revalidatePath("/dashboard/profile/addresses");
+  revalidatePath("/dashboard/cart/checkout");
+}
+
 // A new review rewrites the product's rating, so both order surfaces and the product page go stale at once.
 export function revalidateReview(orderId: number, productId: number) {
   revalidatePath("/dashboard/orders");

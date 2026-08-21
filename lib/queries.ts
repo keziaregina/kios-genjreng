@@ -126,3 +126,23 @@ export function getCart(userId: number) {
 export function getCartItemCount(userId: number) {
   return prisma.cartItem.count({ where: { userId } });
 }
+
+// The default address sorts first so checkout can preselect it without a second query.
+export function getAddresses(userId: number) {
+  return prisma.address.findMany({
+    where: { userId },
+    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+  });
+}
+
+export function getAddress(id: number, userId: number) {
+  return prisma.address.findFirst({ where: { id, userId } });
+}
+
+// Buying straight from a product page skips the address picker, so it falls back to whatever is marked default.
+export function getDefaultAddress(userId: number) {
+  return prisma.address.findFirst({
+    where: { userId },
+    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+  });
+}
