@@ -48,6 +48,13 @@ function failureMessage(error: unknown): string | undefined {
   return error instanceof Error ? FAILURES[error.message] : undefined;
 }
 
+function validItemIds(itemIds: unknown): itemIds is number[] {
+  if (!Array.isArray(itemIds)) return false;
+  if (itemIds.length === 0 || itemIds.length > MAX_CART_ITEMS) return false;
+  if (new Set(itemIds).size !== itemIds.length) return false;
+  return itemIds.every((id) => Number.isInteger(id) && id > 0);
+}
+
 function invalidQuantity(quantity: number) {
   return !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY;
 }
@@ -190,6 +197,26 @@ export async function removeCartItem(itemId: number): Promise<ActionResult> {
   return { ok: true };
 }
 
+// The cart deletes what the buyer ticked, so one round trip clears the whole selection.
+export async function removeCartItems(itemIds: number[]): Promise<ActionResult> {
+  const session = await requireUser();
+
+  if (!validItemIds(itemIds)) {
+    return { ok: false, message: FAILURES.ITEM_NOT_FOUND };
+  }
+
+  const removed = await prisma.cartItem.deleteMany({
+    where: { id: { in: itemIds }, userId: session.userId },
+  });
+
+  if (removed.count === 0) {
+    return { ok: false, message: FAILURES.ITEM_NOT_FOUND };
+  }
+
+  revalidateCart();
+  return { ok: true };
+}
+
 export async function clearCart(): Promise<ActionResult> {
   const session = await requireUser();
 
@@ -207,6 +234,9 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
   }
   if (!PAYMENT_METHODS.includes(input.paymentMethod)) {
     return { ok: false, message: FAILURES.BAD_PAYMENT };
+  }
+  if (!validItemIds(input.itemIds)) {
+    return { ok: false, message: FAILURES.EMPTY_CART };
   }
 
   const key = `checkout:${session.userId}`;
@@ -226,12 +256,13 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
       if (!address) throw new Error("ADDRESS_NOT_FOUND");
 
       const items = await tx.cartItem.findMany({
-        where: { userId: session.userId },
+        where: { userId: session.userId, id: { in: input.itemIds } },
         include: cartInclude,
         orderBy: { productId: "asc" },
       });
 
       if (items.length === 0) throw new Error("EMPTY_CART");
+      if (items.length !== input.itemIds.length) throw new Error("ITEM_NOT_FOUND");
 
       for (const item of items) {
         if (item.product.userId === session.userId) throw new Error("OWN_PRODUCT");
@@ -297,7 +328,10 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
         ids.push(order.id);
       }
 
-      await tx.cartItem.deleteMany({ where: { userId: session.userId } });
+      // Only the ordered rows leave; anything the buyer left unticked stays in the cart.
+      await tx.cartItem.deleteMany({
+        where: { userId: session.userId, id: { in: input.itemIds } },
+      });
 
       return { ids, productIds: items.map((item) => item.productId) };
     });

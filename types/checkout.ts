@@ -12,5 +12,6 @@ export type CheckoutGroupInput = {
 export type CheckoutInput = {
   addressId: number;
   paymentMethod: PaymentMethod;
+  itemIds: number[];
   groups: CheckoutGroupInput[];
 };
