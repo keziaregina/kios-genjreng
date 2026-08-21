@@ -2,14 +2,23 @@
 
 import { redirect } from "next/navigation";
 
+import { formatAddress } from "@/lib/addresses";
 import { requireUser } from "@/lib/auth/guards";
 import { groupByMerchant } from "@/lib/cart";
+import {
+  MAX_NOTE_LENGTH,
+  findCourier,
+  orderTotal,
+  protectionFee,
+} from "@/lib/checkout";
 import { MAX_QUANTITY } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
 import { cartInclude } from "@/lib/queries";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { revalidateCart, revalidateOrders } from "@/lib/revalidate";
 import type { ActionResult } from "@/types/action";
+import type { CheckoutInput } from "@/types/checkout";
+import { PaymentMethod } from "@/types/order";
 
 const MAX_CART_ITEMS = 20;
 
@@ -26,7 +35,14 @@ const FAILURES: Record<string, string> = {
   EMPTY_CART: "Keranjang masih kosong",
   CART_FULL: `Keranjang penuh, maksimal ${MAX_CART_ITEMS} produk`,
   LIMIT_REACHED: "Jumlah sudah mencapai batas stok",
+  ADDRESS_NOT_FOUND: "Alamat pengiriman tidak ditemukan",
+  BAD_PAYMENT: "Metode pembayaran tidak dikenal",
+  MISSING_GROUP: "Ada penjual yang belum dipilih pengirimannya",
+  COURIER_NOT_FOUND: "Kurir tidak tersedia",
+  NOTE_TOO_LONG: `Catatan maksimal ${MAX_NOTE_LENGTH} karakter`,
 };
+
+const PAYMENT_METHODS: PaymentMethod[] = Object.values(PaymentMethod);
 
 function failureMessage(error: unknown): string | undefined {
   return error instanceof Error ? FAILURES[error.message] : undefined;
@@ -183,8 +199,15 @@ export async function clearCart(): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function checkout(): Promise<ActionResult> {
+export async function checkout(input: CheckoutInput): Promise<ActionResult> {
   const session = await requireUser();
+
+  if (!Number.isInteger(input.addressId) || input.addressId <= 0) {
+    return { ok: false, message: FAILURES.ADDRESS_NOT_FOUND };
+  }
+  if (!PAYMENT_METHODS.includes(input.paymentMethod)) {
+    return { ok: false, message: FAILURES.BAD_PAYMENT };
+  }
 
   const key = `checkout:${session.userId}`;
   if (!checkoutLimiter.check(key).allowed) {
@@ -196,6 +219,12 @@ export async function checkout(): Promise<ActionResult> {
 
   try {
     const created = await prisma.$transaction(async (tx) => {
+      const address = await tx.address.findFirst({
+        where: { id: input.addressId, userId: session.userId },
+      });
+
+      if (!address) throw new Error("ADDRESS_NOT_FOUND");
+
       const items = await tx.cartItem.findMany({
         where: { userId: session.userId },
         include: cartInclude,
@@ -219,11 +248,40 @@ export async function checkout(): Promise<ActionResult> {
       const ids: number[] = [];
 
       for (const group of groupByMerchant(items)) {
+        // The form only names a courier; every rupiah is recomputed here so a patched payload cannot set its own price.
+        const draft = input.groups.find(
+          (entry) => entry.merchantId === group.merchant.id,
+        );
+
+        if (!draft) throw new Error("MISSING_GROUP");
+
+        const courier = findCourier(draft.courierId);
+        if (!courier) throw new Error("COURIER_NOT_FOUND");
+
+        const note = String(draft.note ?? "").trim();
+        if (note.length > MAX_NOTE_LENGTH) throw new Error("NOTE_TOO_LONG");
+
+        const costs = {
+          subtotal: group.subtotal,
+          shippingCost: courier.cost,
+          protectionFee: protectionFee(draft.protection === true),
+        };
+
         const order = await tx.order.create({
           data: {
             buyerId: session.userId,
             merchantId: group.merchant.id,
-            total: group.subtotal,
+            subtotal: costs.subtotal,
+            shippingCourier: courier.name,
+            shippingCost: costs.shippingCost,
+            shippingEta: courier.eta,
+            protectionFee: costs.protectionFee,
+            note: note === "" ? null : note,
+            paymentMethod: input.paymentMethod,
+            shipRecipient: address.recipient,
+            shipPhone: address.phone,
+            shipAddress: formatAddress(address),
+            total: orderTotal(costs),
             items: {
               create: group.items.map((item) => ({
                 productId: item.productId,

@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import React, { useState, useTransition } from "react";
 
-import { checkout, clearCart } from "@/app/dashboard/cart/actions";
+import { clearCart } from "@/app/dashboard/cart/actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,19 +24,11 @@ type CheckoutBarProps = {
   blocked: boolean;
 };
 
-// Checkout redirects on success, so only the failure branch ever comes back to this component.
+// Ordering now happens on its own page, so this bar only quotes the goods and hands the buyer over.
 const CheckoutBar = ({ total, groupCount, blocked }: CheckoutBarProps) => {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-
-  const handleCheckout = () => {
-    setError(null);
-    startTransition(async () => {
-      const result = await checkout();
-      if (result && !result.ok) setError(result.message);
-    });
-  };
 
   const handleClear = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -53,20 +46,23 @@ const CheckoutBar = ({ total, groupCount, blocked }: CheckoutBarProps) => {
       )}
 
       <div className="flex items-center justify-between">
-        <span className="text-text-secondary text-sm">Total</span>
+        <span className="text-text-secondary text-sm">Total barang</span>
         <span className="text-text-primary text-base font-extrabold">
           {formatPrice(total)}
         </span>
       </div>
 
-      <Button
-        type="button"
-        size="form"
-        disabled={pending || blocked}
-        onClick={handleCheckout}
-      >
-        {pending ? "Memproses..." : `Checkout · ${formatPrice(total)}`}
-      </Button>
+      {blocked ? (
+        <Button type="button" size="form" disabled>
+          Checkout · {formatPrice(total)}
+        </Button>
+      ) : (
+        <Button asChild size="form">
+          <Link href="/dashboard/cart/checkout">
+            Checkout · {formatPrice(total)}
+          </Link>
+        </Button>
+      )}
 
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogTrigger asChild>
