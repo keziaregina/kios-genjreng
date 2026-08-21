@@ -26,7 +26,7 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
+  const buyer = await prisma.user.upsert({
     where: { email: "budi@kiosgenjreng.test" },
     update: { password, role: "BUYER" },
     create: {
@@ -36,6 +36,25 @@ async function main() {
       role: "BUYER",
     },
   });
+
+  // Checkout refuses to run without an address, so the demo buyer starts with one.
+  const savedAddress = await prisma.address.findFirst({ where: { userId: buyer.id } });
+  if (!savedAddress) {
+    await prisma.address.create({
+      data: {
+        userId: buyer.id,
+        label: "Rumah",
+        recipient: "Budi Santoso",
+        phone: "081234567890",
+        street: "Jl. Jalanin Aja Dulu RT 7/RW 2",
+        village: "Xlogoxari",
+        district: "Ximbabwe",
+        city: "Semarang",
+        postalCode: "50123",
+        isDefault: true,
+      },
+    });
+  }
 
   const categoryRows = await prisma.category.findMany();
   const categoryId = (name: string) =>

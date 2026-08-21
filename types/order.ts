@@ -8,7 +8,7 @@ import type { Review } from "./review";
 import type { PublicUser } from "./user";
 
 // Re-exported from the standalone enums file so Edge code can read it without pulling in the Prisma client.
-export { OrderStatus } from "@/lib/generated/prisma/enums";
+export { OrderStatus, PaymentMethod } from "@/lib/generated/prisma/enums";
 
 /** Row shape of `Order`. Derived from prisma/schema.prisma — never hand-edit. */
 export type Order = OrderModel;

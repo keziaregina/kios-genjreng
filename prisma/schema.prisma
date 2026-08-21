@@ -21,6 +21,11 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentMethod {
+  COD
+  TRANSFER
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
@@ -36,6 +41,29 @@ model User {
   merchantOrders Order[]    @relation("MerchantOrders")
   cartItems      CartItem[]
   reviews        Review[]
+  addresses      Address[]
+}
+
+// A buyer keeps several addresses but ships to one, so the chosen row is copied onto the order.
+model Address {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  label      String
+  recipient  String
+  phone      String
+  street     String
+  village    String
+  district   String
+  city       String
+  postalCode String
+  note       String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Product {
@@ -73,9 +101,21 @@ model Order {
   buyerId    Int
   merchantId Int
   status     OrderStatus @default(PENDING)
+  subtotal   Int         @default(0)
   total      Int
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+
+  // Shipping and payment are copied at checkout, so a later tariff or address edit never rewrites a receipt.
+  shippingCourier String?
+  shippingCost    Int           @default(0)
+  shippingEta     String?
+  protectionFee   Int           @default(0)
+  note            String?
+  paymentMethod   PaymentMethod @default(COD)
+  shipRecipient   String?
+  shipPhone       String?
+  shipAddress     String?
 
   buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
   merchant User        @relation("MerchantOrders", fields: [merchantId], references: [id])
