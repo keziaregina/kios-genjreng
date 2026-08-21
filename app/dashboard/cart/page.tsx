@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import React from "react";
 
 import PageContainer from "@/app/dashboard/components/PageContainer";
+import BackButton from "@/app/dashboard/profile/components/BackButton";
 import { requireUser } from "@/lib/auth/guards";
-import { cartTotal, groupByMerchant, hasStockIssue } from "@/lib/cart";
+import { groupByMerchant } from "@/lib/cart";
 import { getCart } from "@/lib/queries";
 
-import CartGroup from "./components/CartGroup";
-import CheckoutBar from "./components/CheckoutBar";
-import EmptyCart from "./components/EmptyCart";
+import CartList from "./components/CartList";
 
 export const metadata: Metadata = {
   title: "Keranjang",
@@ -21,30 +20,11 @@ const CartPage = async () => {
   const session = await requireUser();
   const items = await getCart(session.userId);
 
-  const groups = groupByMerchant(items);
-  const blocked = items.some(hasStockIssue);
-
   return (
-    <PageContainer>
-      <h1 className="text-text-primary mb-[21px] text-[20px] font-extrabold">
-        Keranjang
-      </h1>
+    <PageContainer className="relative pt-[64px]">
+      <BackButton />
 
-      {items.length === 0 ? (
-        <EmptyCart />
-      ) : (
-        <div className="flex flex-col gap-[21px]">
-          {groups.map((group) => (
-            <CartGroup key={group.merchant.id} group={group} />
-          ))}
-
-          <CheckoutBar
-            total={cartTotal(items)}
-            groupCount={groups.length}
-            blocked={blocked}
-          />
-        </div>
-      )}
+      <CartList groups={groupByMerchant(items)} />
     </PageContainer>
   );
 };
