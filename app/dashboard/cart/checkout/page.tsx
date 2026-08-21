@@ -18,14 +18,30 @@ export const metadata: Metadata = {
 // Prisma reads are invisible to Next's cache, so the page must render per request.
 export const dynamic = "force-dynamic";
 
-const CheckoutPage = async () => {
+type CheckoutPageProps = { searchParams: Promise<{ items?: string }> };
+
+// The cart tells us which rows were ticked; an absent list still means the whole cart.
+function parseItemIds(raw: string | undefined): number[] | null {
+  if (!raw) return null;
+  const ids = raw
+    .split(",")
+    .map((part) => Number(part))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  return ids.length === 0 ? null : ids;
+}
+
+const CheckoutPage = async ({ searchParams }: CheckoutPageProps) => {
   const session = await requireUser();
-  const items = await getCart(session.userId);
+  const cart = await getCart(session.userId);
+
+  const wanted = parseItemIds((await searchParams).items);
+  const items = wanted ? cart.filter((item) => wanted.includes(item.id)) : cart;
 
   // Nothing here is worth reviewing if the cart cannot be ordered, so the buyer is sent back to fix it.
   if (items.length === 0 || items.some(hasStockIssue)) redirect("/dashboard/cart");
 
   const groups = groupByMerchant(items);
+  const itemIds = items.map((item) => item.id);
   const addresses = await getAddresses(session.userId);
 
   return (
@@ -39,7 +55,7 @@ const CheckoutPage = async () => {
 
       <div className="border-divider mb-[21px] w-full border-t" />
 
-      <CheckoutForm groups={groups} addresses={addresses} />
+      <CheckoutForm groups={groups} itemIds={itemIds} addresses={addresses} />
     </PageContainer>
   );
 };
