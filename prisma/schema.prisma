@@ -44,6 +44,10 @@ model Product {
   price       Int
   image       String?
   weight      Int?
+  // Buyers judge a guitar by its spec sheet, so the detail page reads these straight off the row.
+  description String?
+  warranty    String?
+  material    String?
   rating      Float?
   reviewCount Int      @default(0)
   soldCount   Int      @default(0)
