@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { Prisma } from "@/lib/generated/prisma/client";
+import { formatAddress } from "@/lib/addresses";
 import { requireUser } from "@/lib/auth/guards";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { MAX_QUANTITY, nextStatuses } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
 import { createRateLimiter } from "@/lib/rate-limit";
@@ -25,6 +26,7 @@ const FAILURES: Record<string, string> = {
   PRODUCT_NOT_FOUND: "Produk tidak ditemukan",
   OWN_PRODUCT: "Tidak bisa membeli produk sendiri",
   OUT_OF_STOCK: "Stok tidak mencukupi",
+  NO_ADDRESS: "Tambah alamat pengiriman dulu di menu Alamat Tersimpan",
   ILLEGAL_MOVE: "Status pesanan tidak bisa diubah ke sana",
   NOT_COMPLETED: "Ulasan hanya untuk pesanan yang selesai",
   NOT_IN_ORDER: "Produk tidak ada di pesanan ini",
@@ -65,6 +67,14 @@ export async function createOrder(
       if (!product) throw new Error("PRODUCT_NOT_FOUND");
       if (product.userId === session.userId) throw new Error("OWN_PRODUCT");
 
+      // Buying straight from the product page skips the address picker, so the default row stands in for it.
+      const address = await tx.address.findFirst({
+        where: { userId: session.userId },
+        orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+      });
+
+      if (!address) throw new Error("NO_ADDRESS");
+
       // Putting the stock test in the WHERE clause is what stops two buyers claiming the last unit.
       const claimed = await tx.product.updateMany({
         where: { id: productId, stock: { gte: quantity } },
@@ -73,11 +83,17 @@ export async function createOrder(
 
       if (claimed.count === 0) throw new Error("OUT_OF_STOCK");
 
+      const subtotal = product.price * quantity;
+
       const order = await tx.order.create({
         data: {
           buyerId: session.userId,
           merchantId: product.userId,
-          total: product.price * quantity,
+          subtotal,
+          total: subtotal,
+          shipRecipient: address.recipient,
+          shipPhone: address.phone,
+          shipAddress: formatAddress(address),
           items: {
             create: [
               {
