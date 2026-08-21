@@ -7,8 +7,8 @@ const VoucherField = () => (
     <Ticket aria-hidden className="text-text-secondary size-5 shrink-0" />
     <input
       disabled
-      placeholder="Masukkan kode voucher"
-      aria-label="Kode voucher"
+      placeholder="Masukkan kode promo"
+      aria-label="Kode promo"
       className="placeholder:text-text-secondary text-text-primary w-full bg-transparent text-sm font-semibold outline-0"
     />
     <span className="text-text-secondary shrink-0 text-[10px] font-bold">

@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from "react";
 
 import { checkout } from "@/app/dashboard/cart/actions";
+import VoucherField from "@/app/dashboard/cart/components/VoucherField";
 import { useToast } from "@/components/ui/toast";
 import {
   DEFAULT_COURIER_ID,
@@ -19,10 +20,10 @@ import AddressPicker from "./AddressPicker";
 import CheckoutSummary from "./CheckoutSummary";
 import MerchantSection from "./MerchantSection";
 import PaymentPicker from "./PaymentPicker";
-import VoucherField from "./VoucherField";
 
 type CheckoutFormProps = {
   groups: CartGroup[];
+  itemIds: number[];
   addresses: Address[];
 };
 
@@ -37,7 +38,7 @@ function initialDrafts(groups: CartGroup[]): Record<number, CheckoutGroupInput> 
   );
 }
 
-const CheckoutForm = ({ groups, addresses }: CheckoutFormProps) => {
+const CheckoutForm = ({ groups, itemIds, addresses }: CheckoutFormProps) => {
   const [drafts, setDrafts] = useState(() => initialDrafts(groups));
   const [addressId, setAddressId] = useState<number | null>(
     addresses[0]?.id ?? null,
@@ -81,6 +82,7 @@ const CheckoutForm = ({ groups, addresses }: CheckoutFormProps) => {
       const result = await checkout({
         addressId,
         paymentMethod,
+        itemIds,
         groups: groups.map((group) => draftFor(group.merchant.id)),
       });
 
