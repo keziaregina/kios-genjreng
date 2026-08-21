@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { User } from "lucide-react";
 import { notFound } from "next/navigation";
 import React from "react";
 
@@ -9,9 +10,10 @@ import { inter } from "@/app/ui/font";
 import { parseId } from "@/lib/api";
 import { getSession } from "@/lib/auth/guards";
 import { getProduct, getProductReviews } from "@/lib/queries";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice, formatSold } from "@/lib/utils";
 
 import ProductActions from "./components/ProductActions";
+import ProductDescription from "./components/ProductDescription";
 import ReviewList from "./components/ReviewList";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -39,9 +41,22 @@ const ProductPage = async ({ params }: PageProps) => {
   // Nobody buys from their own shelf, so the seller sees the listing without the order controls.
   const canBuy = session !== null && session.userId !== product.userId;
 
+  // A blank column is a spec the merchant never filled, so the row disappears instead of printing nothing.
+  const specs: { label: string; value: string }[] = [];
+  if (product.weight !== null) {
+    specs.push({ label: "Berat Satuan", value: `${product.weight} kg` });
+  }
+  if (product.warranty) specs.push({ label: "Garansi", value: product.warranty });
+  if (product.material) specs.push({ label: "Material", value: product.material });
+  specs.push({ label: "Kategori", value: product.category.name });
+  specs.push({
+    label: "Stok",
+    value: product.stock > 0 ? `${product.stock} tersisa` : "Habis",
+  });
+
   return (
-    <div className={`relative px-[26px] pt-[64px] pb-[24px] ${inter.className}`}>
-      <BackButton />
+    <div className={cn("relative", inter.className)}>
+      <BackButton className="bg-primary/60 hover:bg-primary/80 fixed size-10 rounded-full backdrop-blur-sm has-[>svg]:px-0" />
 
       <ProductImage
         src={product.image}
@@ -49,51 +64,64 @@ const ProductPage = async ({ params }: PageProps) => {
         sizes="100vw"
         priority
         iconSize={40}
-        className="mb-[21px] h-[218px] w-full rounded-[10px]"
+        className="h-[390px] w-full"
       />
 
-      <h1 className="text-text-primary text-[20px] font-extrabold">{product.name}</h1>
-      <p className="text-button-primary mt-1 text-[18px] font-bold">
-        {formatPrice(product.price)}
-      </p>
+      <div
+        className={cn(
+          "flex flex-col px-[26px] pt-[16px]",
+          canBuy ? "pb-[120px]" : "pb-[24px]",
+        )}
+      >
+        <div className="flex items-center gap-[11px]">
+          {product.soldCount > 0 && (
+            <span className="bg-button-primary text-text-primary rounded-[4px] px-2 py-1 text-[10px] font-bold">
+              Terjual {formatSold(product.soldCount)}
+            </span>
+          )}
+          {product.rating !== null && (
+            <span className="text-text-primary flex items-center gap-1 text-[10px] font-bold">
+              <StarRating value={product.rating} size={12} />
+              {product.rating.toFixed(1)}
+            </span>
+          )}
+        </div>
 
-      {product.rating !== null && (
-        <div className="mt-2 flex items-center gap-2">
-          <StarRating value={product.rating} size={14} />
-          <span className="text-text-secondary text-xs font-semibold">
-            {product.rating.toFixed(1)} · {product.reviewCount} ulasan
+        <h1 className="text-text-primary mt-[11px] text-[20px] font-extrabold">
+          {product.name}
+        </h1>
+
+        {product.description && <ProductDescription text={product.description} />}
+
+        <p className="text-button-primary mt-[11px] text-[20px] font-extrabold">
+          {formatPrice(product.price)}
+        </p>
+
+        <div className="border-divider mt-[16px] flex items-center gap-3 border-y py-[12px]">
+          <span className="bg-avatar-bg text-text-primary flex size-10 shrink-0 items-center justify-center rounded-full">
+            <User size={22} />
           </span>
+          <div className="flex min-w-0 flex-col">
+            <span className="text-text-primary truncate text-sm font-semibold">
+              {product.user.name}
+            </span>
+            <span className="text-text-secondary text-xs">Penjual</span>
+          </div>
         </div>
-      )}
 
-      <dl className="mt-[21px] flex flex-col gap-2 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-text-secondary">Kategori</dt>
-          <dd className="text-text-primary font-semibold">{product.category.name}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-text-secondary">Penjual</dt>
-          <dd className="text-text-primary font-semibold">{product.user.name}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-text-secondary">Stok</dt>
-          <dd className="text-text-primary font-semibold">
-            {product.stock > 0 ? `${product.stock} tersisa` : "Habis"}
-          </dd>
-        </div>
-      </dl>
+        <dl className="mt-[16px] flex flex-col gap-1 text-xs">
+          <dt className="text-text-secondary mb-1 font-semibold">Detail Produk :</dt>
+          {specs.map((spec) => (
+            <dd key={spec.label} className="text-text-secondary">
+              {spec.label}: <span className="text-text-primary">{spec.value}</span>
+            </dd>
+          ))}
+        </dl>
 
-      {canBuy && (
-        <div className="mt-[21px]">
-          <ProductActions
-            productId={product.id}
-            price={product.price}
-            stock={product.stock}
-          />
-        </div>
-      )}
+        <ReviewList reviews={reviews} />
+      </div>
 
-      <ReviewList reviews={reviews} />
+      {canBuy && <ProductActions productId={product.id} stock={product.stock} />}
     </div>
   );
 };

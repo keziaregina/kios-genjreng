@@ -44,7 +44,10 @@ type NavigationProps = {
 const Navigation = ({ role, cartCount = 0 }: NavigationProps) => {
   const pathname = usePathname();
 
-  if (pathname === "/dashboard/profile") return null;
+  // The product detail page pins its own buy bar to the bottom, so two stacked bars never fight for it.
+  if (pathname === "/dashboard/profile" || pathname.startsWith("/dashboard/product/")) {
+    return null;
+  }
 
   const center = centerItem[role];
   const CenterIcon = center.icon;

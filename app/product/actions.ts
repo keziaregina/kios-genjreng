@@ -16,6 +16,9 @@ type ProductFields = {
   price: number;
   categoryId: number;
   weight: number | null;
+  description: string | null;
+  warranty: string | null;
+  material: string | null;
   stock: number;
 };
 
@@ -29,6 +32,9 @@ function parseFields(formData: FormData): ParsedFields {
   const priceRaw = String(formData.get("price") ?? "").trim();
   const categoryRaw = String(formData.get("categoryId") ?? "").trim();
   const weightRaw = String(formData.get("weight") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const warranty = String(formData.get("warranty") ?? "").trim();
+  const material = String(formData.get("material") ?? "").trim();
   const stockRaw = String(formData.get("stock") ?? "").trim();
 
   if (!name) return { ok: false, message: "Nama produk wajib diisi" };
@@ -55,7 +61,18 @@ function parseFields(formData: FormData): ParsedFields {
     return { ok: false, message: "Stok harus bilangan bulat >= 0" };
   }
 
-  return { ok: true, name, price, categoryId, weight, stock };
+  // Spec text is optional, so a blank box clears the column instead of storing an empty string.
+  return {
+    ok: true,
+    name,
+    price,
+    categoryId,
+    weight,
+    description: description || null,
+    warranty: warranty || null,
+    material: material || null,
+    stock,
+  };
 }
 
 type ReadImage = { path: string | null; message?: string };
@@ -98,6 +115,9 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
         price: fields.price,
         categoryId: fields.categoryId,
         weight: fields.weight,
+        description: fields.description,
+        warranty: fields.warranty,
+        material: fields.material,
         stock: fields.stock,
         userId: session.userId,
         image: image.path,
@@ -142,6 +162,9 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
         price: fields.price,
         categoryId: fields.categoryId,
         weight: fields.weight,
+        description: fields.description,
+        warranty: fields.warranty,
+        material: fields.material,
         stock: fields.stock,
         image: nextImage,
       },

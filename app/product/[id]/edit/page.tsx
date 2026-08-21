@@ -53,6 +53,9 @@ const EditProductPage = async ({ params }: PageProps) => {
           categoryId: product.categoryId,
           image: product.image,
           weight: product.weight,
+          description: product.description,
+          warranty: product.warranty,
+          material: product.material,
           stock: product.stock,
         }}
       />

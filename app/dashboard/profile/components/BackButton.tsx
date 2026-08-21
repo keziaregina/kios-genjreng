@@ -1,22 +1,35 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { ChevronLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation';
-import React from 'react'
+import { ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React from "react";
 
-const BackButton = () => {
-	const router = useRouter();
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-	const handleBack = () => {
-		router.back()
-	}
-	return (
-		<Button onClick={() => handleBack()} variant="ghost" 
-			className="absolute top-5 left-5 cursor-pointer text-text-primary p-0 ">
-			<ChevronLeft size={25}/>
-		</Button>
-	)
-}
+type BackButtonProps = { className?: string };
 
-export default BackButton
+// Pages that scroll under the chevron pin it themselves, so the default stays parked on the page corner.
+const BackButton = ({ className }: BackButtonProps) => {
+  const router = useRouter();
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  return (
+    <Button
+      onClick={handleBack}
+      variant="ghost"
+      aria-label="Kembali"
+      className={cn(
+        "text-text-primary absolute top-5 left-5 z-10 cursor-pointer p-0",
+        className,
+      )}
+    >
+      <ChevronLeft size={25} />
+    </Button>
+  );
+};
+
+export default BackButton;

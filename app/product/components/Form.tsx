@@ -21,6 +21,9 @@ type ProductFormValues = {
   price: string;
   categoryId: string;
   weight: string;
+  description: string;
+  warranty: string;
+  material: string;
   stock: string;
 };
 
@@ -31,6 +34,9 @@ type EditableProduct = {
   categoryId: number;
   image: string | null;
   weight: number | null;
+  description: string | null;
+  warranty: string | null;
+  material: string | null;
   stock: number;
 };
 
@@ -60,6 +66,9 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
       price: product ? String(product.price) : "",
       categoryId: product ? String(product.categoryId) : "",
       weight: product?.weight != null ? String(product.weight) : "",
+      description: product?.description ?? "",
+      warranty: product?.warranty ?? "",
+      material: product?.material ?? "",
       stock: product ? String(product.stock) : "",
     },
   });
@@ -73,6 +82,9 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
     formData.set("price", values.price);
     formData.set("categoryId", values.categoryId);
     formData.set("weight", values.weight);
+    formData.set("description", values.description);
+    formData.set("warranty", values.warranty);
+    formData.set("material", values.material);
     formData.set("stock", values.stock);
     if (image) formData.set("image", image);
 
@@ -176,6 +188,43 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
         {errors.weight && (
           <p className="text-button-primary text-xs">{errors.weight.message}</p>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="warranty" className={labelClass}>
+          Garansi
+        </label>
+        <input
+          {...register("warranty")}
+          id="warranty"
+          placeholder="1 bulan"
+          className={fieldClass}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="material" className={labelClass}>
+          Material
+        </label>
+        <input
+          {...register("material")}
+          id="material"
+          placeholder="Rosewood"
+          className={fieldClass}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="description" className={labelClass}>
+          Deskripsi
+        </label>
+        <textarea
+          {...register("description")}
+          id="description"
+          rows={3}
+          placeholder="Dibuat dengan teknik pembuatan gitar Yamaha untuk seri premium"
+          className={fieldClass}
+        />
       </div>
 
       <div className="flex flex-col gap-2">

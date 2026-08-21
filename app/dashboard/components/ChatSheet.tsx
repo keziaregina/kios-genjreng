@@ -20,6 +20,9 @@ import ChatPanel from "./ChatPanel";
 
 const HIDDEN_PATHS = ["/dashboard/profile"];
 
+// The product detail page ends in a pinned buy bar, so the floating bubble would land on top of it.
+const HIDDEN_PREFIXES = ["/dashboard/product/"];
+
 // The sheet unmounts its own content when closed, so the conversation is owned one level up and survives it.
 const ChatSheet = () => {
   const pathname = usePathname();
@@ -56,7 +59,12 @@ const ChatSheet = () => {
     setPending(false);
   };
 
-  if (HIDDEN_PATHS.includes(pathname)) return null;
+  if (
+    HIDDEN_PATHS.includes(pathname) ||
+    HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  ) {
+    return null;
+  }
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
