@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 
 import { storeLabel } from "@/lib/store";
@@ -27,7 +28,13 @@ const CartGroup = ({
 }: CartGroupProps) => (
   <section className="flex flex-col gap-[11px]">
     <h2 className="text-text-primary truncate text-sm font-bold">
-      Penjual: {storeLabel(group.merchant)}
+      Penjual:{" "}
+      <Link
+        href={`/dashboard/merchant/${group.merchant.id}`}
+        className="underline-offset-2 active:underline"
+      >
+        {storeLabel(group.merchant)}
+      </Link>
     </h2>
 
     <ul className="flex flex-col gap-[11px]">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { User } from "lucide-react";
+import { ChevronRight, User } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import React from "react";
 
@@ -99,7 +100,11 @@ const ProductPage = async ({ params }: PageProps) => {
           {formatPrice(product.price)}
         </p>
 
-        <div className="border-divider mt-[16px] flex items-center gap-3 border-y py-[12px]">
+        <Link
+          href={`/dashboard/merchant/${product.userId}`}
+          aria-label={`Lihat toko ${storeLabel(product.user)}`}
+          className="border-divider mt-[16px] flex items-center gap-3 border-y py-[12px] active:opacity-80"
+        >
           <span className="bg-avatar-bg text-text-primary flex size-10 shrink-0 items-center justify-center rounded-full">
             <User size={22} />
           </span>
@@ -109,7 +114,8 @@ const ProductPage = async ({ params }: PageProps) => {
             </span>
             <span className="text-text-secondary text-xs">Penjual</span>
           </div>
-        </div>
+          <ChevronRight size={18} className="text-text-secondary ml-auto shrink-0" />
+        </Link>
 
         <dl className="mt-[16px] flex flex-col gap-1 text-xs">
           <dt className="text-text-secondary mb-1 font-semibold">Detail Produk :</dt>

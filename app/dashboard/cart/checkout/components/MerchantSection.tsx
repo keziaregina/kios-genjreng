@@ -1,6 +1,7 @@
 "use client";
 
 import { Store } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,9 +43,12 @@ const MerchantSection = ({
   <section className="flex flex-col gap-[11px]">
     <div className="flex items-center gap-3">
       <Store aria-hidden className="text-text-primary size-6 shrink-0" />
-      <p className="text-text-primary truncate text-sm font-bold">
+      <Link
+        href={`/dashboard/merchant/${group.merchant.id}`}
+        className="text-text-primary truncate text-sm font-bold underline-offset-2 active:underline"
+      >
         {storeLabel(group.merchant)}
-      </p>
+      </Link>
     </div>
 
     <ul className="flex flex-col gap-[11px]">

@@ -47,10 +47,15 @@ const OrderDetailPage = async ({ params }: PageProps) => {
 
   if (!side) notFound();
 
+  // Only the seller side owns a storefront, so the buyer name stays plain text.
   const counterparty =
     side === Role.MERCHANT
-      ? { label: "Pembeli", name: order.buyer.name }
-      : { label: "Penjual", name: storeLabel(order.merchant) };
+      ? { label: "Pembeli", name: order.buyer.name, href: null }
+      : {
+          label: "Penjual",
+          name: storeLabel(order.merchant),
+          href: `/dashboard/merchant/${order.merchantId}`,
+        };
 
   return (
     <PageContainer className="relative pt-[64px]">
@@ -94,7 +99,15 @@ const OrderDetailPage = async ({ params }: PageProps) => {
       <dl className="mb-[21px] flex flex-col gap-2 text-sm">
         <div className="flex justify-between">
           <dt className="text-text-secondary">{counterparty.label}</dt>
-          <dd className="text-text-primary font-semibold">{counterparty.name}</dd>
+          <dd className="text-text-primary font-semibold">
+            {counterparty.href ? (
+              <Link href={counterparty.href} className="underline-offset-2 active:underline">
+                {counterparty.name}
+              </Link>
+            ) : (
+              counterparty.name
+            )}
+          </dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-text-secondary">Dipesan</dt>
