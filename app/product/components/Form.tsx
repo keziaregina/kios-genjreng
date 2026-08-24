@@ -24,6 +24,7 @@ type ProductFormValues = {
   description: string;
   warranty: string;
   material: string;
+  color: string;
   stock: string;
 };
 
@@ -37,6 +38,7 @@ type EditableProduct = {
   description: string | null;
   warranty: string | null;
   material: string | null;
+  color: string | null;
   stock: number;
 };
 
@@ -69,6 +71,7 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
       description: product?.description ?? "",
       warranty: product?.warranty ?? "",
       material: product?.material ?? "",
+      color: product?.color ?? "",
       stock: product ? String(product.stock) : "",
     },
   });
@@ -85,6 +88,7 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
     formData.set("description", values.description);
     formData.set("warranty", values.warranty);
     formData.set("material", values.material);
+    formData.set("color", values.color);
     formData.set("stock", values.stock);
     if (image) formData.set("image", image);
 
@@ -210,6 +214,18 @@ const ProductForm = ({ categories, product }: ProductFormProps) => {
           {...register("material")}
           id="material"
           placeholder="Rosewood"
+          className={fieldClass}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="color" className={labelClass}>
+          Warna
+        </label>
+        <input
+          {...register("color")}
+          id="color"
+          placeholder="Natural"
           className={fieldClass}
         />
       </div>

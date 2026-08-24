@@ -19,6 +19,7 @@ type ProductFields = {
   description: string | null;
   warranty: string | null;
   material: string | null;
+  color: string | null;
   stock: number;
 };
 
@@ -35,6 +36,7 @@ function parseFields(formData: FormData): ParsedFields {
   const description = String(formData.get("description") ?? "").trim();
   const warranty = String(formData.get("warranty") ?? "").trim();
   const material = String(formData.get("material") ?? "").trim();
+  const color = String(formData.get("color") ?? "").trim();
   const stockRaw = String(formData.get("stock") ?? "").trim();
 
   if (!name) return { ok: false, message: "Nama produk wajib diisi" };
@@ -71,6 +73,7 @@ function parseFields(formData: FormData): ParsedFields {
     description: description || null,
     warranty: warranty || null,
     material: material || null,
+    color: color || null,
     stock,
   };
 }
@@ -118,6 +121,7 @@ export async function createProduct(formData: FormData): Promise<ActionResult> {
         description: fields.description,
         warranty: fields.warranty,
         material: fields.material,
+        color: fields.color,
         stock: fields.stock,
         userId: session.userId,
         image: image.path,
@@ -165,6 +169,7 @@ export async function updateProduct(formData: FormData): Promise<ActionResult> {
         description: fields.description,
         warranty: fields.warranty,
         material: fields.material,
+        color: fields.color,
         stock: fields.stock,
         image: nextImage,
       },

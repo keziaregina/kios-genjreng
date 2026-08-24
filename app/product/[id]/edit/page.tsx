@@ -56,6 +56,7 @@ const EditProductPage = async ({ params }: PageProps) => {
           description: product.description,
           warranty: product.warranty,
           material: product.material,
+          color: product.color,
           stock: product.stock,
         }}
       />
