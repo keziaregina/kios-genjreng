@@ -36,3 +36,8 @@ export function revalidateReview(orderId: number, productId: number) {
   revalidatePath(`/dashboard/orders/${orderId}`);
   revalidatePath(`/dashboard/product/${productId}`);
 }
+
+// The display name greets from the dashboard home and heads the profile, so the whole layout goes stale with the row.
+export function revalidateAccount() {
+  revalidatePath("/dashboard", "layout");
+}
