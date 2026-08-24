@@ -70,6 +70,12 @@ const StorePage = async () => {
         >
           Pesanan Masuk
         </Link>
+        <Link
+          href="/dashboard/store/vouchers"
+          className="bg-quarternary text-text-primary inline-flex rounded-xl px-4 py-3 text-sm font-semibold"
+        >
+          Kelola Voucher
+        </Link>
       </div>
     </div>
   );
