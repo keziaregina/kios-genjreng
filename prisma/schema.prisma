@@ -37,6 +37,9 @@ model User {
   email        String   @unique
   password     String
   role         Role     @default(BUYER)
+  // A store identity is separate from the personal name, so buyers see "GitarMurah_Semarang" instead of the merchant's real name.
+  storeName    String?
+  city         String?
   tokenVersion Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -82,6 +85,7 @@ model Product {
   description String?
   warranty    String?
   material    String?
+  color       String?
   rating      Float?
   reviewCount Int      @default(0)
   soldCount   Int      @default(0)

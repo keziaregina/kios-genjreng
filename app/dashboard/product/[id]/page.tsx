@@ -10,6 +10,7 @@ import { inter } from "@/app/ui/font";
 import { parseId } from "@/lib/api";
 import { getSession } from "@/lib/auth/guards";
 import { getProduct, getProductReviews } from "@/lib/queries";
+import { storeLabel } from "@/lib/store";
 import { cn, formatPrice, formatSold } from "@/lib/utils";
 
 import ProductActions from "./components/ProductActions";
@@ -48,6 +49,7 @@ const ProductPage = async ({ params }: PageProps) => {
   }
   if (product.warranty) specs.push({ label: "Garansi", value: product.warranty });
   if (product.material) specs.push({ label: "Material", value: product.material });
+  if (product.color) specs.push({ label: "Warna", value: product.color });
   specs.push({ label: "Kategori", value: product.category.name });
   specs.push({
     label: "Stok",
@@ -103,7 +105,7 @@ const ProductPage = async ({ params }: PageProps) => {
           </span>
           <div className="flex min-w-0 flex-col">
             <span className="text-text-primary truncate text-sm font-semibold">
-              {product.user.name}
+              {storeLabel(product.user)}
             </span>
             <span className="text-text-secondary text-xs">Penjual</span>
           </div>
