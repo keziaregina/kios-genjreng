@@ -51,6 +51,7 @@ model User {
   reviews        Review[]
   addresses      Address[]
   vouchers       Voucher[]
+  redemptions    VoucherRedemption[]
 }
 
 // A buyer keeps several addresses but ships to one, so the chosen row is copied onto the order.
@@ -131,8 +132,9 @@ model Order {
 
   buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
   merchant User        @relation("MerchantOrders", fields: [merchantId], references: [id])
-  items    OrderItem[]
-  reviews  Review[]
+  items      OrderItem[]
+  reviews    Review[]
+  redemption VoucherRedemption?
 
   @@index([buyerId])
   @@index([merchantId])
@@ -208,10 +210,28 @@ model Voucher {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redemptions VoucherRedemption[]
 
   @@unique([userId, code])
   @@index([userId])
+}
+
+// usedCount is store-wide, so a per-buyer row is what stops one buyer redeeming the same code every checkout.
+model VoucherRedemption {
+  id        Int      @id @default(autoincrement())
+  voucherId Int
+  buyerId   Int
+  orderId   Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  buyer   User    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([voucherId, buyerId])
+  @@index([buyerId])
 }
 
 model Category {
