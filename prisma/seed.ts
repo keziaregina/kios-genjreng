@@ -107,6 +107,25 @@ async function main() {
     });
   }
 
+  // One demo voucher so checkout has something real to type in dev.
+  const existingVoucher = await prisma.voucher.findFirst({
+    where: { userId: seller.id, code: "GENJRENG10" },
+  });
+  if (!existingVoucher) {
+    await prisma.voucher.create({
+      data: {
+        userId: seller.id,
+        code: "GENJRENG10",
+        discountType: "PERCENTAGE",
+        amount: 10,
+        maxDiscount: 50_000,
+        minPurchase: 100_000,
+        usageLimit: null,
+        isActive: true,
+      },
+    });
+  }
+
   console.log("Seed done.");
 }
 

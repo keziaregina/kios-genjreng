@@ -133,6 +133,14 @@ const OrderDetailPage = async ({ params }: PageProps) => {
             </dd>
           </div>
         )}
+        {order.discount > 0 && (
+          <div className="flex justify-between">
+            <dt className="text-text-secondary">Voucher {order.voucherCode}</dt>
+            <dd className="text-text-primary font-semibold">
+              - {formatPrice(order.discount)}
+            </dd>
+          </div>
+        )}
         <div className="flex justify-between">
           <dt className="text-text-secondary">Total</dt>
           <dd className="text-button-primary font-bold">{formatPrice(order.total)}</dd>
