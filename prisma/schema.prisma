@@ -26,6 +26,11 @@ enum PaymentMethod {
   TRANSFER
 }
 
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
@@ -42,6 +47,7 @@ model User {
   cartItems      CartItem[]
   reviews        Review[]
   addresses      Address[]
+  vouchers       Voucher[]
 }
 
 // A buyer keeps several addresses but ships to one, so the chosen row is copied onto the order.
@@ -111,6 +117,8 @@ model Order {
   shippingCost    Int           @default(0)
   shippingEta     String?
   protectionFee   Int           @default(0)
+  discount        Int           @default(0)
+  voucherCode     String?
   note            String?
   paymentMethod   PaymentMethod @default(COD)
   shipRecipient   String?
@@ -178,6 +186,28 @@ model CartItem {
 
   @@unique([userId, productId])
   @@index([productId])
+}
+
+// A voucher is scoped to the merchant who created it, so a code only ever discounts that seller's own Order.
+model Voucher {
+  id           Int          @id @default(autoincrement())
+  userId       Int
+  code         String
+  discountType DiscountType
+  amount       Int
+  maxDiscount  Int?
+  minPurchase  Int          @default(0)
+  usageLimit   Int?
+  usedCount    Int          @default(0)
+  isActive     Boolean      @default(true)
+  expiresAt    DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, code])
+  @@index([userId])
 }
 
 model Category {
