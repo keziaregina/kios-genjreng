@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { cartInclude } from "@/lib/queries";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { revalidateCart, revalidateOrders } from "@/lib/revalidate";
+import { computeDiscount, normalizeVoucherCode } from "@/lib/vouchers";
 import type { ActionResult } from "@/types/action";
 import type { CheckoutInput } from "@/types/checkout";
 import { PaymentMethod } from "@/types/order";
@@ -40,6 +41,10 @@ const FAILURES: Record<string, string> = {
   MISSING_GROUP: "Ada penjual yang belum dipilih pengirimannya",
   COURIER_NOT_FOUND: "Kurir tidak tersedia",
   NOTE_TOO_LONG: `Catatan maksimal ${MAX_NOTE_LENGTH} karakter`,
+  VOUCHER_NOT_FOUND: "Kode voucher tidak ditemukan",
+  VOUCHER_EXPIRED: "Voucher sudah kedaluwarsa",
+  VOUCHER_MIN_PURCHASE: "Belanja belum mencapai minimum voucher ini",
+  VOUCHER_USAGE_LIMIT: "Voucher sudah mencapai batas pemakaian",
 };
 
 const PAYMENT_METHODS: PaymentMethod[] = Object.values(PaymentMethod);
@@ -292,10 +297,43 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
         const note = String(draft.note ?? "").trim();
         if (note.length > MAX_NOTE_LENGTH) throw new Error("NOTE_TOO_LONG");
 
+        let discount = 0;
+        let voucherCode: string | null = null;
+
+        if (draft.voucherCode) {
+          const code = normalizeVoucherCode(draft.voucherCode);
+          const voucher = await tx.voucher.findUnique({
+            where: { userId_code: { userId: group.merchant.id, code } },
+          });
+
+          if (!voucher || !voucher.isActive) throw new Error("VOUCHER_NOT_FOUND");
+          if (voucher.expiresAt && voucher.expiresAt < new Date()) {
+            throw new Error("VOUCHER_EXPIRED");
+          }
+          if (group.subtotal < voucher.minPurchase) throw new Error("VOUCHER_MIN_PURCHASE");
+          if (voucher.usageLimit !== null && voucher.usedCount >= voucher.usageLimit) {
+            throw new Error("VOUCHER_USAGE_LIMIT");
+          }
+
+          // Claimed the same way stock is: an atomic increment inside the transaction stops a race from over-redeeming.
+          const claimed = await tx.voucher.updateMany({
+            where: {
+              id: voucher.id,
+              ...(voucher.usageLimit !== null ? { usedCount: { lt: voucher.usageLimit } } : {}),
+            },
+            data: { usedCount: { increment: 1 } },
+          });
+          if (claimed.count === 0) throw new Error("VOUCHER_USAGE_LIMIT");
+
+          discount = computeDiscount(voucher, group.subtotal);
+          voucherCode = voucher.code;
+        }
+
         const costs = {
           subtotal: group.subtotal,
           shippingCost: courier.cost,
           protectionFee: protectionFee(draft.protection === true),
+          discount,
         };
 
         const order = await tx.order.create({
@@ -307,6 +345,8 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
             shippingCost: costs.shippingCost,
             shippingEta: courier.eta,
             protectionFee: costs.protectionFee,
+            discount: costs.discount,
+            voucherCode,
             note: note === "" ? null : note,
             paymentMethod: input.paymentMethod,
             shipRecipient: address.recipient,
