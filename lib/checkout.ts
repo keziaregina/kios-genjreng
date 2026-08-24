@@ -42,6 +42,10 @@ export function orderTotal(costs: {
   subtotal: number;
   shippingCost: number;
   protectionFee: number;
+  discount: number;
 }) {
-  return costs.subtotal + costs.shippingCost + costs.protectionFee;
+  return Math.max(
+    0,
+    costs.subtotal + costs.shippingCost + costs.protectionFee - costs.discount,
+  );
 }

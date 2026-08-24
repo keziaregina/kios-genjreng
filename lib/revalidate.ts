@@ -18,6 +18,12 @@ export function revalidateAddresses() {
   revalidatePath("/dashboard/cart/checkout");
 }
 
+// Checkout reads live vouchers, so editing one in the merchant panel refreshes checkout too.
+export function revalidateVouchers() {
+  revalidatePath("/dashboard/store/vouchers");
+  revalidatePath("/dashboard/cart/checkout");
+}
+
 // A new review rewrites the product's rating, so both order surfaces and the product page go stale at once.
 export function revalidateReview(orderId: number, productId: number) {
   revalidatePath("/dashboard/orders");

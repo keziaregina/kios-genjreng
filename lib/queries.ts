@@ -146,3 +146,16 @@ export function getDefaultAddress(userId: number) {
     orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
   });
 }
+
+// A code is matched inside its owner merchant's scope, so two sellers can reuse the same word.
+export function getVoucherByCode(userId: number, code: string) {
+  return prisma.voucher.findUnique({ where: { userId_code: { userId, code } } });
+}
+
+export function getVouchersByMerchant(userId: number) {
+  return prisma.voucher.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
+}
+
+export function getVoucher(id: number, userId: number) {
+  return prisma.voucher.findFirst({ where: { id, userId } });
+}

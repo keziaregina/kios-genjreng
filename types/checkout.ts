@@ -6,6 +6,7 @@ export type CheckoutGroupInput = {
   courierId: string;
   note: string;
   protection: boolean;
+  voucherCode: string | null;
 };
 
 /** What the checkout form sends. Every price is recomputed server-side, so no money travels in here. */
