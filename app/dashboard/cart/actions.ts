@@ -45,6 +45,7 @@ const FAILURES: Record<string, string> = {
   VOUCHER_EXPIRED: "Voucher sudah kedaluwarsa",
   VOUCHER_MIN_PURCHASE: "Belanja belum mencapai minimum voucher ini",
   VOUCHER_USAGE_LIMIT: "Voucher sudah mencapai batas pemakaian",
+  VOUCHER_ALREADY_USED: "Kamu sudah pernah memakai voucher ini",
 };
 
 const PAYMENT_METHODS: PaymentMethod[] = Object.values(PaymentMethod);
@@ -299,6 +300,7 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
 
         let discount = 0;
         let voucherCode: string | null = null;
+        let voucherId: number | null = null;
 
         if (draft.voucherCode) {
           const code = normalizeVoucherCode(draft.voucherCode);
@@ -315,6 +317,15 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
             throw new Error("VOUCHER_USAGE_LIMIT");
           }
 
+          // usedCount is store-wide, so the per-buyer redemption row is what makes one code one use per account.
+          const redeemed = await tx.voucherRedemption.findUnique({
+            where: {
+              voucherId_buyerId: { voucherId: voucher.id, buyerId: session.userId },
+            },
+            select: { id: true },
+          });
+          if (redeemed) throw new Error("VOUCHER_ALREADY_USED");
+
           // Claimed the same way stock is: an atomic increment inside the transaction stops a race from over-redeeming.
           const claimed = await tx.voucher.updateMany({
             where: {
@@ -327,6 +338,7 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
 
           discount = computeDiscount(voucher, group.subtotal);
           voucherCode = voucher.code;
+          voucherId = voucher.id;
         }
 
         const costs = {
@@ -364,6 +376,13 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
           },
           select: { id: true },
         });
+
+        // The unique pair is the real lock: a concurrent second redemption fails the insert and rolls the order back.
+        if (voucherId !== null) {
+          await tx.voucherRedemption.create({
+            data: { voucherId, buyerId: session.userId, orderId: order.id },
+          });
+        }
 
         ids.push(order.id);
       }

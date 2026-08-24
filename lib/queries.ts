@@ -158,6 +158,14 @@ export function getVoucherByCode(userId: number, code: string) {
   return prisma.voucher.findUnique({ where: { userId_code: { userId, code } } });
 }
 
+// One buyer may redeem a code once, so the checkout preview asks before it prices anything.
+export function hasRedeemedVoucher(voucherId: number, buyerId: number) {
+  return prisma.voucherRedemption.findUnique({
+    where: { voucherId_buyerId: { voucherId, buyerId } },
+    select: { id: true },
+  });
+}
+
 export function getVouchersByMerchant(userId: number) {
   return prisma.voucher.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
 }

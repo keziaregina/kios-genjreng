@@ -1,7 +1,7 @@
 "use server";
 
 import { requireUser } from "@/lib/auth/guards";
-import { getVoucherByCode } from "@/lib/queries";
+import { getVoucherByCode, hasRedeemedVoucher } from "@/lib/queries";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { computeDiscount, normalizeVoucherCode } from "@/lib/vouchers";
 
@@ -13,6 +13,7 @@ const FAILURES = {
   EXPIRED: "Voucher sudah kedaluwarsa",
   MIN_PURCHASE: "Belanja belum mencapai minimum voucher ini",
   USAGE_LIMIT: "Voucher sudah mencapai batas pemakaian",
+  ALREADY_USED: "Kamu sudah pernah memakai voucher ini",
 };
 
 // "Apply" is a preview: it validates and prices the code but writes nothing, so checkout stays the only place money moves.
@@ -44,6 +45,11 @@ export async function previewVoucher(
   if (subtotal < voucher.minPurchase) return { ok: false, message: FAILURES.MIN_PURCHASE };
   if (voucher.usageLimit !== null && voucher.usedCount >= voucher.usageLimit) {
     return { ok: false, message: FAILURES.USAGE_LIMIT };
+  }
+
+  // The redemption row is per buyer, so a code already spent by this account is rejected before checkout prices it.
+  if (await hasRedeemedVoucher(voucher.id, session.userId)) {
+    return { ok: false, message: FAILURES.ALREADY_USED };
   }
 
   return { ok: true, discount: computeDiscount(voucher, subtotal) };
