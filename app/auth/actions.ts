@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { Prisma } from "@/lib/generated/prisma/client";
+import { EMAIL_PATTERN, MIN_PASSWORD_LENGTH } from "@/lib/account";
 import { safeNextPath } from "@/lib/auth/next-path";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import {
@@ -29,8 +30,6 @@ export type LoginInput = {
   next?: string;
 };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 // The submitted role is untrusted input, so only the two enum members are accepted.
 function parseRole(raw: string): Role | null {
   return raw === Role.BUYER || raw === Role.MERCHANT ? raw : null;
@@ -53,8 +52,8 @@ export async function register(input: RegisterInput): Promise<ActionResult> {
   if (!email || !EMAIL_PATTERN.test(email)) {
     return { ok: false, message: "Format email tidak valid" };
   }
-  if (password.length < 8) {
-    return { ok: false, message: "Password minimal 8 karakter" };
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return { ok: false, message: `Password minimal ${MIN_PASSWORD_LENGTH} karakter` };
   }
   if (!role) return { ok: false, message: "Pilih dulu mau beli atau jualan" };
 
