@@ -1,6 +1,7 @@
 import { Prisma } from "@/lib/generated/prisma/client";
 import { publicUserSelect } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { Role } from "@/types/user";
 
 // Single include shape for products so every caller gets the same object graph.
 const productInclude = {
@@ -22,6 +23,11 @@ export function getProduct(id: number) {
 
 export function getCategories() {
   return prisma.category.findMany({ orderBy: { name: "asc" } });
+}
+
+// Only a merchant row owns a storefront, so a buyer id resolves to nothing instead of an empty shelf.
+export function getMerchant(id: number) {
+  return prisma.user.findFirst({ where: { id, role: Role.MERCHANT }, select: publicUserSelect });
 }
 
 export function getProductsByUser(userId: number) {
