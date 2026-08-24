@@ -3,7 +3,6 @@
 import Link from "next/link";
 import React from "react";
 
-import VoucherField from "@/app/dashboard/cart/components/VoucherField";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 
@@ -37,8 +36,6 @@ const CartSummary = ({
 
   return (
     <div className="bg-primary fixed inset-x-0 bottom-0 z-20 flex flex-col gap-3 px-[26px] pt-[14px] pb-[24px]">
-      <VoucherField />
-
       <div className="flex flex-col gap-2">
         <Row label="Subtotal" value={formatPrice(subtotal)} />
         <Row label="Ongkir" value={formatPrice(shippingCost)} />

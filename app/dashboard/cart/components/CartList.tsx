@@ -56,6 +56,7 @@ const CartList = ({ groups }: { groups: CartGroupModel[] }) => {
     subtotal: cartTotal(chosen),
     shippingCost: shippingEstimate(merchantCount),
     protectionFee: 0,
+    discount: 0,
   };
 
   const toggle = (itemId: number, next: boolean) => {

@@ -9,6 +9,7 @@ type CheckoutSummaryProps = {
   subtotal: number;
   shippingCost: number;
   protectionFee: number;
+  discount: number;
   total: number;
   groupCount: number;
   pending: boolean;
@@ -27,6 +28,7 @@ const CheckoutSummary = ({
   subtotal,
   shippingCost,
   protectionFee,
+  discount,
   total,
   groupCount,
   pending,
@@ -41,6 +43,7 @@ const CheckoutSummary = ({
     {protectionFee > 0 && (
       <Row label="Perlindungan ekstra" value={formatPrice(protectionFee)} />
     )}
+    {discount > 0 && <Row label="Diskon voucher" value={`- ${formatPrice(discount)}`} />}
 
     <div className="flex items-center justify-between">
       <span className="text-text-secondary text-sm">Total</span>

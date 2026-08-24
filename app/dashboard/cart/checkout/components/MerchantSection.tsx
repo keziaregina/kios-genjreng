@@ -16,11 +16,14 @@ import type { CheckoutGroupInput } from "@/types/checkout";
 
 import CheckoutItemRow from "./CheckoutItemRow";
 import CourierPicker from "./CourierPicker";
+import VoucherField from "./VoucherField";
 
 type MerchantSectionProps = {
   group: CartGroup;
   draft: CheckoutGroupInput;
   onChange: (patch: Partial<CheckoutGroupInput>) => void;
+  voucherDiscount: number;
+  onVoucherApplied: (result: { code: string; discount: number } | null) => void;
   disabled: boolean;
 };
 
@@ -31,6 +34,8 @@ const MerchantSection = ({
   group,
   draft,
   onChange,
+  voucherDiscount,
+  onVoucherApplied,
   disabled,
 }: MerchantSectionProps) => (
   <section className="flex flex-col gap-[11px]">
@@ -85,6 +90,17 @@ const MerchantSection = ({
       value={draft.courierId}
       disabled={disabled}
       onChange={(courierId) => onChange({ courierId })}
+    />
+
+    <VoucherField
+      merchantId={group.merchant.id}
+      subtotal={group.subtotal}
+      applied={draft.voucherCode ? { code: draft.voucherCode, discount: voucherDiscount } : null}
+      disabled={disabled}
+      onApplied={(result) => {
+        onChange({ voucherCode: result?.code ?? null });
+        onVoucherApplied(result);
+      }}
     />
   </section>
 );

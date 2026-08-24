@@ -3,7 +3,6 @@
 import React, { useState, useTransition } from "react";
 
 import { checkout } from "@/app/dashboard/cart/actions";
-import VoucherField from "@/app/dashboard/cart/components/VoucherField";
 import { useToast } from "@/components/ui/toast";
 import {
   DEFAULT_COURIER_ID,
@@ -29,7 +28,13 @@ type CheckoutFormProps = {
 
 // Every merchant block starts on the same courier, so a buyer who changes nothing still has a valid shipment.
 function blankDraft(merchantId: number): CheckoutGroupInput {
-  return { merchantId, courierId: DEFAULT_COURIER_ID, note: "", protection: false };
+  return {
+    merchantId,
+    courierId: DEFAULT_COURIER_ID,
+    note: "",
+    protection: false,
+    voucherCode: null,
+  };
 }
 
 function initialDrafts(groups: CartGroup[]): Record<number, CheckoutGroupInput> {
@@ -46,6 +51,7 @@ const CheckoutForm = ({ groups, itemIds, addresses }: CheckoutFormProps) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     PaymentMethod.COD,
   );
+  const [discounts, setDiscounts] = useState<Record<number, number>>({});
   const [pending, startTransition] = useTransition();
   const toast = useToast();
 
@@ -67,9 +73,10 @@ const CheckoutForm = ({ groups, itemIds, addresses }: CheckoutFormProps) => {
         subtotal: sum.subtotal + group.subtotal,
         shippingCost: sum.shippingCost + (findCourier(draft.courierId)?.cost ?? 0),
         protectionFee: sum.protectionFee + protectionFee(draft.protection),
+        discount: sum.discount + (discounts[group.merchant.id] ?? 0),
       };
     },
-    { subtotal: 0, shippingCost: 0, protectionFee: 0 },
+    { subtotal: 0, shippingCost: 0, protectionFee: 0, discount: 0 },
   );
 
   const handleSubmit = () => {
@@ -102,10 +109,15 @@ const CheckoutForm = ({ groups, itemIds, addresses }: CheckoutFormProps) => {
           draft={draftFor(group.merchant.id)}
           disabled={pending}
           onChange={(patch) => patchDraft(group.merchant.id, patch)}
+          voucherDiscount={discounts[group.merchant.id] ?? 0}
+          onVoucherApplied={(result) =>
+            setDiscounts((current) => ({
+              ...current,
+              [group.merchant.id]: result?.discount ?? 0,
+            }))
+          }
         />
       ))}
-
-      <VoucherField />
 
       <section className="flex flex-col">
         <p className="text-button-primary mb-2 text-xs font-semibold">
@@ -132,6 +144,7 @@ const CheckoutForm = ({ groups, itemIds, addresses }: CheckoutFormProps) => {
         subtotal={costs.subtotal}
         shippingCost={costs.shippingCost}
         protectionFee={costs.protectionFee}
+        discount={costs.discount}
         total={orderTotal(costs)}
         groupCount={groups.length}
         pending={pending}
