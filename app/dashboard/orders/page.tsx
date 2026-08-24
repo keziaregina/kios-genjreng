@@ -4,6 +4,7 @@ import React from "react";
 import PageContainer from "@/app/dashboard/components/PageContainer";
 import { requireUser } from "@/lib/auth/guards";
 import { getOrdersByBuyer } from "@/lib/queries";
+import { storeLabel } from "@/lib/store";
 import { Role } from "@/types/user";
 
 import OrderCard from "./components/OrderCard";
@@ -35,7 +36,7 @@ const OrdersPage = async () => {
             <OrderCard
               key={order.id}
               order={order}
-              counterparty={`Penjual: ${order.merchant.name}`}
+              counterparty={`Penjual: ${storeLabel(order.merchant)}`}
             >
               <StatusActions
                 orderId={order.id}

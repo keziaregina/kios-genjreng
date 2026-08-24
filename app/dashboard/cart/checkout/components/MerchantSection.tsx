@@ -10,6 +10,7 @@ import {
   PROTECTION_FEE,
   PROTECTION_LABEL,
 } from "@/lib/checkout";
+import { storeLabel } from "@/lib/store";
 import { formatPrice } from "@/lib/utils";
 import type { CartGroup } from "@/types/cart";
 import type { CheckoutGroupInput } from "@/types/checkout";
@@ -42,7 +43,7 @@ const MerchantSection = ({
     <div className="flex items-center gap-3">
       <Store aria-hidden className="text-text-primary size-6 shrink-0" />
       <p className="text-text-primary truncate text-sm font-bold">
-        {group.merchant.name}
+        {storeLabel(group.merchant)}
       </p>
     </div>
 

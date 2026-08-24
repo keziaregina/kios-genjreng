@@ -2,6 +2,7 @@
 
 import React from "react";
 
+import { storeLabel } from "@/lib/store";
 import type { CartGroup as CartGroupModel, CartItemWithProduct } from "@/types/cart";
 
 import CartItemRow from "./CartItemRow";
@@ -26,7 +27,7 @@ const CartGroup = ({
 }: CartGroupProps) => (
   <section className="flex flex-col gap-[11px]">
     <h2 className="text-text-primary truncate text-sm font-bold">
-      Penjual: {group.merchant.name}
+      Penjual: {storeLabel(group.merchant)}
     </h2>
 
     <ul className="flex flex-col gap-[11px]">

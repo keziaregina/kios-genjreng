@@ -1,5 +1,6 @@
 import type { ToolDefinition } from "@/lib/ai/deepseek";
 import { getCategories, searchProducts } from "@/lib/queries";
+import { storeLabel } from "@/lib/store";
 import type { ProductSuggestion } from "@/types/chat";
 
 export const chatTools: ToolDefinition[] = [
@@ -82,7 +83,7 @@ export async function runTool(name: string, rawArguments: string): Promise<ToolO
           name: row.name,
           price: row.price,
           category: row.category.name,
-          merchant: row.user.name,
+          merchant: storeLabel(row.user),
         })),
       ),
       products,

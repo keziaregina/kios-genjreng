@@ -24,6 +24,12 @@ export function revalidateVouchers() {
   revalidatePath("/dashboard/cart/checkout");
 }
 
+// A store name shows up everywhere a merchant's products or orders do, so the whole dashboard layout goes stale.
+export function revalidateStore() {
+  revalidatePath("/dashboard/store");
+  revalidatePath("/dashboard", "layout");
+}
+
 // A new review rewrites the product's rating, so both order surfaces and the product page go stale at once.
 export function revalidateReview(orderId: number, productId: number) {
   revalidatePath("/dashboard/orders");

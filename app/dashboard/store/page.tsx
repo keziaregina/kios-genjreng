@@ -5,8 +5,9 @@ import React from "react";
 
 import { inter } from "@/app/ui/font";
 import ProductImage from "@/components/ProductImage";
-import { requireMerchant } from "@/lib/auth/guards";
+import { getCurrentUser, requireMerchant } from "@/lib/auth/guards";
 import { getProductsByUser } from "@/lib/queries";
+import { storeLabel } from "@/lib/store";
 import { formatPrice } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -18,13 +19,28 @@ export const dynamic = "force-dynamic";
 
 const StorePage = async () => {
   const session = await requireMerchant();
-  const products = await getProductsByUser(session.userId);
+  const [products, user] = await Promise.all([
+    getProductsByUser(session.userId),
+    getCurrentUser(),
+  ]);
 
   return (
     <div className={`px-[26px] py-[24px] ${inter.className}`}>
-      <h1 className="text-text-primary mb-[21px] text-[20px] font-extrabold">
-        Toko Saya
-      </h1>
+      <div className="mb-[21px] flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-col">
+          <h1 className="text-text-primary text-[20px] font-extrabold">Toko Saya</h1>
+          {user && (
+            <span className="text-text-secondary truncate text-xs">{storeLabel(user)}</span>
+          )}
+        </div>
+        <Link
+          href="/dashboard/store/edit"
+          aria-label="Edit profil toko"
+          className="bg-quarternary text-text-secondary flex size-9 shrink-0 items-center justify-center rounded-full active:opacity-80"
+        >
+          <Pencil size={16} />
+        </Link>
+      </div>
 
       {products.length === 0 ? (
         <p className="text-text-secondary mb-[21px] text-sm">Belum ada produk.</p>

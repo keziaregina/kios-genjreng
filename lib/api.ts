@@ -8,6 +8,8 @@ export const publicUserSelect = {
   name: true,
   email: true,
   role: true,
+  storeName: true,
+  city: true,
   createdAt: true,
   updatedAt: true,
 } as const;

@@ -57,6 +57,11 @@ const CheckoutItemRow = ({ item }: { item: CartItemWithProduct }) => {
             {product.name}
           </p>
           {specs && <p className="text-text-secondary text-xs">{specs}</p>}
+          {product.color && (
+            <p className="text-text-secondary text-xs">
+              Warna: {product.color}
+            </p>
+          )}
           <p className="text-button-primary text-sm font-bold">
             {formatPrice(cartItemTotal({ ...item, quantity }))}
           </p>

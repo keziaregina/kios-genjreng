@@ -36,6 +36,8 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
     name: user.name,
     email: user.email,
     role: user.role,
+    storeName: user.storeName,
+    city: user.city,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

@@ -9,6 +9,7 @@ import { parseId } from "@/lib/api";
 import { requireUser } from "@/lib/auth/guards";
 import { PAYMENT_LABEL, formatOrderDate } from "@/lib/orders";
 import { getOrder } from "@/lib/queries";
+import { storeLabel } from "@/lib/store";
 import { formatPrice } from "@/lib/utils";
 import { OrderStatus } from "@/types/order";
 import { Role } from "@/types/user";
@@ -49,7 +50,7 @@ const OrderDetailPage = async ({ params }: PageProps) => {
   const counterparty =
     side === Role.MERCHANT
       ? { label: "Pembeli", name: order.buyer.name }
-      : { label: "Penjual", name: order.merchant.name };
+      : { label: "Penjual", name: storeLabel(order.merchant) };
 
   return (
     <PageContainer className="relative pt-[64px]">
