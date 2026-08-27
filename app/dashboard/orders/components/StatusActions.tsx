@@ -13,14 +13,15 @@ type StatusActionsProps = {
   orderId: number;
   status: OrderStatus;
   side: Role;
+  paid: boolean;
 };
 
 // The server re-checks the same transition table, so a stale button cannot force an illegal move.
-const StatusActions = ({ orderId, status, side }: StatusActionsProps) => {
+const StatusActions = ({ orderId, status, side, paid }: StatusActionsProps) => {
   const [pending, startTransition] = useTransition();
   const toast = useToast();
 
-  const moves = nextStatuses(side, status);
+  const moves = nextStatuses(side, status, paid);
   if (moves.length === 0) return null;
 
   const handleMove = (next: OrderStatus) => {

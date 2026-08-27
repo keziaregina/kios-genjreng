@@ -6,6 +6,7 @@ import OrderCard from "@/app/dashboard/orders/components/OrderCard";
 import OrderShipping from "@/app/dashboard/orders/components/OrderShipping";
 import StatusActions from "@/app/dashboard/orders/components/StatusActions";
 import { requireMerchant } from "@/lib/auth/guards";
+import { isOrderPaid } from "@/lib/orders";
 import { getOrdersByMerchant } from "@/lib/queries";
 import { Role } from "@/types/user";
 
@@ -41,6 +42,7 @@ const StoreOrdersPage = async () => {
                 orderId={order.id}
                 status={order.status}
                 side={Role.MERCHANT}
+                paid={isOrderPaid(order)}
               />
             </OrderCard>
           ))}

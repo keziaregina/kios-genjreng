@@ -4,6 +4,7 @@ import type {
   Product,
 } from "@/lib/generated/prisma/client";
 
+import type { Payment } from "./payment";
 import type { Review } from "./review";
 import type { PublicUser } from "./user";
 
@@ -22,4 +23,5 @@ export type OrderWithRelations = Order & {
   buyer: PublicUser;
   merchant: PublicUser;
   reviews: Pick<Review, "productId">[];
+  payment: Pick<Payment, "status"> | null;
 };

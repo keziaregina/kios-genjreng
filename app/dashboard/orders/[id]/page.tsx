@@ -7,11 +7,17 @@ import PageContainer from "@/app/dashboard/components/PageContainer";
 import BackButton from "@/app/dashboard/profile/components/BackButton";
 import { parseId } from "@/lib/api";
 import { requireUser } from "@/lib/auth/guards";
-import { PAYMENT_LABEL, formatOrderDate } from "@/lib/orders";
+import {
+  PAYMENT_LABEL,
+  PAYMENT_STATUS_LABEL,
+  formatOrderDate,
+  isOrderPaid,
+} from "@/lib/orders";
 import { getOrder } from "@/lib/queries";
 import { storeLabel } from "@/lib/store";
 import { formatPrice } from "@/lib/utils";
-import { OrderStatus } from "@/types/order";
+import { OrderStatus, PaymentMethod } from "@/types/order";
+import { PaymentStatus } from "@/types/payment";
 import { Role } from "@/types/user";
 
 import OrderShipping from "../components/OrderShipping";
@@ -121,6 +127,15 @@ const OrderDetailPage = async ({ params }: PageProps) => {
             {PAYMENT_LABEL[order.paymentMethod]}
           </dd>
         </div>
+        {/* Only a card order has a gateway state worth showing; the others settle off-platform. */}
+        {order.paymentMethod === PaymentMethod.CARD && (
+          <div className="flex justify-between">
+            <dt className="text-text-secondary">Status bayar</dt>
+            <dd className="text-text-primary font-semibold">
+              {PAYMENT_STATUS_LABEL[order.payment?.status ?? PaymentStatus.REQUIRES_PAYMENT]}
+            </dd>
+          </div>
+        )}
         <div className="flex justify-between">
           <dt className="text-text-secondary">Total barang</dt>
           <dd className="text-text-primary font-semibold">
@@ -161,7 +176,12 @@ const OrderDetailPage = async ({ params }: PageProps) => {
         </div>
       </dl>
 
-      <StatusActions orderId={order.id} status={order.status} side={side} />
+      <StatusActions
+        orderId={order.id}
+        status={order.status}
+        side={side}
+        paid={isOrderPaid(order)}
+      />
 
       {side === Role.BUYER && order.status === OrderStatus.COMPLETED && (
         <ReviewSection order={order} />

@@ -81,6 +81,7 @@ const orderInclude = {
   buyer: { select: publicUserSelect },
   merchant: { select: publicUserSelect },
   reviews: { select: { productId: true } },
+  payment: { select: { status: true } },
 } as const;
 
 export function getOrdersByBuyer(buyerId: number) {
@@ -172,4 +173,12 @@ export function getVouchersByMerchant(userId: number) {
 
 export function getVoucher(id: number, userId: number) {
   return prisma.voucher.findFirst({ where: { id, userId } });
+}
+
+// A buyer may only ever confirm their own intent, so ownership is part of the lookup instead of a later check.
+export function getPayment(id: number, buyerId: number) {
+  return prisma.payment.findFirst({
+    where: { id, buyerId },
+    select: { id: true, amount: true, status: true, stripePaymentIntentId: true },
+  });
 }

@@ -3,6 +3,7 @@ import React from "react";
 
 import PageContainer from "@/app/dashboard/components/PageContainer";
 import { requireUser } from "@/lib/auth/guards";
+import { isOrderPaid } from "@/lib/orders";
 import { getOrdersByBuyer } from "@/lib/queries";
 import { storeLabel } from "@/lib/store";
 import { Role } from "@/types/user";
@@ -42,6 +43,7 @@ const OrdersPage = async () => {
                 orderId={order.id}
                 status={order.status}
                 side={Role.BUYER}
+                paid={isOrderPaid(order)}
               />
               <ReviewCta order={order} />
             </OrderCard>
