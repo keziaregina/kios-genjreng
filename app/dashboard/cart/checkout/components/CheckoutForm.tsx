@@ -93,7 +93,7 @@ const CheckoutForm = ({ groups, itemIds, addresses }: CheckoutFormProps) => {
         groups: groups.map((group) => draftFor(group.merchant.id)),
       });
 
-      // Checkout redirects on success, so only the failure branch ever comes back here.
+      // Every method redirects on success, so only the failure branch ever comes back here.
       if (result && !result.ok) toast.error(result.message);
     });
   };

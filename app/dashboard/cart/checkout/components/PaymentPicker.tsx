@@ -51,8 +51,8 @@ const PaymentPicker = ({ value, onSelect, disabled }: PaymentPickerProps) => {
           <SheetHeader>
             <SheetTitle className="text-text-primary">Pilih Pembayaran</SheetTitle>
             <SheetDescription className="text-text-secondary">
-              Belum ada gerbang pembayaran, jadi ini janji cara bayar saat barang
-              sampai.
+              Kartu dibayar sekarang lewat Stripe; COD dan transfer dibayar
+              setelah penjual mengonfirmasi.
             </SheetDescription>
           </SheetHeader>
 

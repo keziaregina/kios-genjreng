@@ -11,15 +11,18 @@ import {
   orderTotal,
   protectionFee,
 } from "@/lib/checkout";
+import { restoreOrder } from "@/lib/order-cancel";
 import { MAX_QUANTITY } from "@/lib/orders";
 import { prisma } from "@/lib/prisma";
 import { cartInclude } from "@/lib/queries";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { revalidateCart, revalidateOrders } from "@/lib/revalidate";
+import { stripe, toStripeAmount } from "@/lib/stripe/client";
 import { computeDiscount, normalizeVoucherCode } from "@/lib/vouchers";
 import type { ActionResult } from "@/types/action";
 import type { CheckoutInput } from "@/types/checkout";
-import { PaymentMethod } from "@/types/order";
+import { OrderStatus, PaymentMethod } from "@/types/order";
+import { PaymentStatus } from "@/types/payment";
 
 const MAX_CART_ITEMS = 20;
 
@@ -232,6 +235,78 @@ export async function clearCart(): Promise<ActionResult> {
   return { ok: true };
 }
 
+// Buying now is a one-item checkout, so it parks the pick in the cart and hands the same reviewed flow the id.
+export async function buyNow(
+  productId: number,
+  quantity: number,
+): Promise<ActionResult> {
+  const session = await requireUser();
+
+  if (!Number.isInteger(productId) || productId <= 0) {
+    return { ok: false, message: FAILURES.PRODUCT_NOT_FOUND };
+  }
+  if (invalidQuantity(quantity)) {
+    return { ok: false, message: `Jumlah harus antara 1 dan ${MAX_QUANTITY}` };
+  }
+
+  const key = `cart:${session.userId}`;
+  if (!cartLimiter.check(key).allowed) {
+    return {
+      ok: false,
+      message: "Terlalu banyak perubahan keranjang, coba lagi sebentar lagi.",
+    };
+  }
+
+  let itemId: number;
+
+  try {
+    itemId = await prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: productId },
+        select: { id: true, userId: true, stock: true },
+      });
+
+      if (!product) throw new Error("PRODUCT_NOT_FOUND");
+      if (product.userId === session.userId) throw new Error("OWN_PRODUCT");
+      if (product.stock === 0) throw new Error("OUT_OF_STOCK");
+
+      const existing = await tx.cartItem.findUnique({
+        where: { userId_productId: { userId: session.userId, productId } },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        const items = await tx.cartItem.count({ where: { userId: session.userId } });
+        if (items >= MAX_CART_ITEMS) throw new Error("CART_FULL");
+      }
+
+      // Buy now states a quantity rather than adding to one, so the row is set instead of merged.
+      const item = await tx.cartItem.upsert({
+        where: { userId_productId: { userId: session.userId, productId } },
+        create: {
+          userId: session.userId,
+          productId,
+          quantity: Math.min(quantity, product.stock, MAX_QUANTITY),
+        },
+        update: { quantity: Math.min(quantity, product.stock, MAX_QUANTITY) },
+        select: { id: true },
+      });
+
+      return item.id;
+    });
+  } catch (error) {
+    const message = failureMessage(error);
+    if (message) return { ok: false, message };
+
+    console.error("[buyNow]", error);
+    return { ok: false, message: "Gagal menyiapkan checkout" };
+  }
+
+  cartLimiter.record(key);
+  revalidateCart();
+  redirect(`/dashboard/cart/checkout?items=${itemId}`);
+}
+
 export async function checkout(input: CheckoutInput): Promise<ActionResult> {
   const session = await requireUser();
 
@@ -252,6 +327,8 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
 
   let orderIds: number[] = [];
   let productIds: number[] = [];
+  let paymentId: number | null = null;
+  let paymentAmount = 0;
 
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -283,6 +360,7 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
       }
 
       const ids: number[] = [];
+      let amount = 0;
 
       for (const group of groupByMerchant(items)) {
         // The form only names a courier; every rupiah is recomputed here so a patched payload cannot set its own price.
@@ -348,6 +426,9 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
           discount,
         };
 
+        const total = orderTotal(costs);
+        amount += total;
+
         const order = await tx.order.create({
           data: {
             buyerId: session.userId,
@@ -364,7 +445,7 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
             shipRecipient: address.recipient,
             shipPhone: address.phone,
             shipAddress: formatAddress(address),
-            total: orderTotal(costs),
+            total,
             items: {
               create: group.items.map((item) => ({
                 productId: item.productId,
@@ -387,16 +468,40 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
         ids.push(order.id);
       }
 
+      // A multi-merchant cart splits into several orders but is paid once, so one Payment row owns them all.
+      let paymentId: number | null = null;
+
+      if (input.paymentMethod === PaymentMethod.CARD) {
+        const payment = await tx.payment.create({
+          data: { buyerId: session.userId, amount },
+          select: { id: true },
+        });
+
+        await tx.order.updateMany({
+          where: { id: { in: ids } },
+          data: { paymentId: payment.id },
+        });
+
+        paymentId = payment.id;
+      }
+
       // Only the ordered rows leave; anything the buyer left unticked stays in the cart.
       await tx.cartItem.deleteMany({
         where: { userId: session.userId, id: { in: input.itemIds } },
       });
 
-      return { ids, productIds: items.map((item) => item.productId) };
+      return {
+        ids,
+        productIds: items.map((item) => item.productId),
+        paymentId,
+        amount,
+      };
     });
 
     orderIds = created.ids;
     productIds = created.productIds;
+    paymentId = created.paymentId;
+    paymentAmount = created.amount;
   } catch (error) {
     const message = failureMessage(error);
     if (message) {
@@ -408,8 +513,60 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
     return { ok: false, message: "Gagal memproses checkout" };
   }
 
+  // The intent is created outside the transaction, otherwise a call across the internet holds every claimed row locked.
+  if (paymentId !== null) {
+    try {
+      const intent = await stripe().paymentIntents.create({
+        amount: toStripeAmount(paymentAmount),
+        currency: "idr",
+        automatic_payment_methods: { enabled: true },
+        metadata: { paymentId: String(paymentId) },
+      });
+
+      await prisma.payment.update({
+        where: { id: paymentId },
+        data: { stripePaymentIntentId: intent.id },
+      });
+    } catch (error) {
+      console.error("[checkout:intent]", error);
+      await releaseUnpaidCheckout(paymentId, orderIds);
+      revalidateCart();
+      revalidateOrders(productIds);
+      return { ok: false, message: "Gagal menyiapkan pembayaran kartu" };
+    }
+
+    checkoutLimiter.record(key);
+    revalidateCart();
+    revalidateOrders(productIds);
+    // Paying needs its own route: revalidateCart() bounces the checkout page, which redirects once the cart is empty.
+    redirect(`/dashboard/cart/checkout/pay/${paymentId}`);
+  }
+
   checkoutLimiter.record(key);
   revalidateCart();
   revalidateOrders(productIds);
   redirect(orderIds.length === 1 ? `/dashboard/orders/${orderIds[0]}` : "/dashboard/orders");
+}
+
+// The orders exist but no intent does, so they are rolled back the same way a failed payment rolls them back.
+async function releaseUnpaidCheckout(paymentId: number, orderIds: number[]) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const orderId of orderIds) {
+        await restoreOrder(tx, orderId);
+      }
+
+      await tx.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: { status: OrderStatus.CANCELLED },
+      });
+
+      await tx.payment.update({
+        where: { id: paymentId },
+        data: { status: PaymentStatus.CANCELLED },
+      });
+    });
+  } catch (error) {
+    console.error("[checkout:release]", error);
+  }
 }

@@ -1,18 +1,30 @@
 import { OrderStatus, PaymentMethod } from "@/types/order";
+import { PaymentStatus } from "@/types/payment";
 import { Role } from "@/types/user";
 
 // Direct buy and cart checkout must refuse the same absurd quantities, so the ceiling lives beside the other order rules.
 export const MAX_QUANTITY = 99;
 
-// No gateway is wired up yet, so a method is a promise about how the buyer will pay on delivery day.
+// Only CARD collects money at checkout; the other two are still a promise about how the buyer will pay later.
 export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   [PaymentMethod.COD]: "Bayar di Tempat (COD)",
   [PaymentMethod.TRANSFER]: "Transfer Bank",
+  [PaymentMethod.CARD]: "Kartu Kredit/Debit",
 };
 
 export const PAYMENT_DESCRIPTION: Record<PaymentMethod, string> = {
   [PaymentMethod.COD]: "Bayar tunai saat barang sampai",
   [PaymentMethod.TRANSFER]: "Transfer manual ke rekening penjual",
+  [PaymentMethod.CARD]: "Bayar sekarang lewat Stripe (mode uji)",
+};
+
+// A card order carries a gateway state the other methods do not, so it gets its own label table.
+export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
+  [PaymentStatus.REQUIRES_PAYMENT]: "Belum dibayar",
+  [PaymentStatus.PROCESSING]: "Sedang diproses",
+  [PaymentStatus.SUCCEEDED]: "Lunas",
+  [PaymentStatus.FAILED]: "Gagal",
+  [PaymentStatus.CANCELLED]: "Dibatalkan",
 };
 
 // Every legal move lives in one table so the buttons and the server guard can never disagree.
@@ -33,8 +45,23 @@ const moves: Record<Role, Record<OrderStatus, OrderStatus[]>> = {
   },
 };
 
-export function nextStatuses(role: Role, status: OrderStatus): OrderStatus[] {
-  return moves[role][status];
+// A card order is settled by Stripe; COD and transfer are settled off-platform, so they count as paid from the start.
+export function isOrderPaid(order: {
+  paymentMethod: PaymentMethod;
+  payment: { status: PaymentStatus } | null;
+}): boolean {
+  if (order.paymentMethod !== PaymentMethod.CARD) return true;
+  return order.payment?.status === PaymentStatus.SUCCEEDED;
+}
+
+export function nextStatuses(
+  role: Role,
+  status: OrderStatus,
+  paid = true,
+): OrderStatus[] {
+  const legal = moves[role][status];
+  // Everything but cancelling is withheld while a card order is unpaid, or a merchant ships goods nobody paid for.
+  return paid ? legal : legal.filter((next) => next === OrderStatus.CANCELLED);
 }
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
