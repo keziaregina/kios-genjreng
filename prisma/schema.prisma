@@ -24,6 +24,15 @@ enum OrderStatus {
 enum PaymentMethod {
   COD
   TRANSFER
+  CARD
+}
+
+enum PaymentStatus {
+  REQUIRES_PAYMENT
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
 }
 
 enum DiscountType {
@@ -52,6 +61,7 @@ model User {
   addresses      Address[]
   vouchers       Voucher[]
   redemptions    VoucherRedemption[]
+  payments       Payment[]
 }
 
 // A buyer keeps several addresses but ships to one, so the chosen row is copied onto the order.
@@ -126,18 +136,38 @@ model Order {
   voucherCode     String?
   note            String?
   paymentMethod   PaymentMethod @default(COD)
+  paymentId       Int?
   shipRecipient   String?
   shipPhone       String?
   shipAddress     String?
 
   buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
   merchant User        @relation("MerchantOrders", fields: [merchantId], references: [id])
+  payment    Payment?    @relation(fields: [paymentId], references: [id])
   items      OrderItem[]
   reviews    Review[]
   redemption VoucherRedemption?
 
   @@index([buyerId])
   @@index([merchantId])
+  @@index([paymentId])
+}
+
+// One checkout splits into an Order per merchant but is paid once, so the Stripe intent hangs off its own row.
+model Payment {
+  id                    Int           @id @default(autoincrement())
+  buyerId               Int
+  amount                Int
+  currency              String        @default("idr")
+  status                PaymentStatus @default(REQUIRES_PAYMENT)
+  stripePaymentIntentId String?       @unique
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  buyer  User    @relation(fields: [buyerId], references: [id])
+  orders Order[]
+
+  @@index([buyerId])
 }
 
 // Name and price are copied, not joined, so renaming or repricing a product never rewrites history.
