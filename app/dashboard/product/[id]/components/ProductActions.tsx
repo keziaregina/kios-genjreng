@@ -3,8 +3,7 @@
 import { ShoppingCart } from "lucide-react";
 import React, { useTransition } from "react";
 
-import { addToCart } from "@/app/dashboard/cart/actions";
-import { createOrder } from "@/app/dashboard/orders/actions";
+import { addToCart, buyNow } from "@/app/dashboard/cart/actions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 
@@ -20,10 +19,10 @@ const ProductActions = ({ productId, stock }: ProductActionsProps) => {
 
   const soldOut = stock === 0;
 
-  // A successful order redirects, so only the failure branch ever comes back here.
+  // Buy now redirects to checkout, so only the failure branch ever comes back here.
   const handleBuy = () => {
     startTransition(async () => {
-      const result = await createOrder(productId, 1);
+      const result = await buyNow(productId, 1);
       if (result && !result.ok) toast.error(result.message);
     });
   };
