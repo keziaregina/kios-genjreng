@@ -20,9 +20,9 @@ const SETTLED: PaymentStatus[] = [
   PaymentStatus.CANCELLED,
 ];
 
-function findPayment(intentId: string) {
+function findPayment(sessionId: string) {
   return prisma.payment.findUnique({
-    where: { stripePaymentIntentId: intentId },
+    where: { stripeCheckoutSessionId: sessionId },
     select: {
       id: true,
       status: true,
@@ -33,14 +33,23 @@ function findPayment(intentId: string) {
   });
 }
 
-async function markSucceeded(intentId: string) {
-  const payment = await findPayment(intentId);
+// Checkout mints the intent itself, so its id only becomes knowable once the session reports back.
+function intentIdOf(session: Stripe.Checkout.Session): string | null {
+  if (typeof session.payment_intent === "string") return session.payment_intent;
+  return session.payment_intent?.id ?? null;
+}
+
+async function markSucceeded(session: Stripe.Checkout.Session) {
+  const payment = await findPayment(session.id);
   if (!payment || SETTLED.includes(payment.status)) return [];
 
   await prisma.$transaction(async (tx) => {
     await tx.payment.update({
       where: { id: payment.id },
-      data: { status: PaymentStatus.SUCCEEDED },
+      data: {
+        status: PaymentStatus.SUCCEEDED,
+        stripePaymentIntentId: intentIdOf(session),
+      },
     });
 
     await tx.order.updateMany({
@@ -52,14 +61,18 @@ async function markSucceeded(intentId: string) {
   return payment.orders;
 }
 
-async function markFailed(intentId: string) {
-  const payment = await findPayment(intentId);
+// A declined card and an abandoned session both end the same way, only the status the buyer sees differs.
+async function markUnpaid(
+  session: Stripe.Checkout.Session,
+  status: typeof PaymentStatus.FAILED | typeof PaymentStatus.CANCELLED,
+) {
+  const payment = await findPayment(session.id);
   if (!payment || SETTLED.includes(payment.status)) return [];
 
   await prisma.$transaction(async (tx) => {
     await tx.payment.update({
       where: { id: payment.id },
-      data: { status: PaymentStatus.FAILED },
+      data: { status, stripePaymentIntentId: intentIdOf(session) },
     });
 
     // A buyer may have cancelled one order already, and restoring its stock twice would invent inventory.
@@ -76,16 +89,26 @@ async function markFailed(intentId: string) {
   return payment.orders;
 }
 
-async function markProcessing(intentId: string) {
-  const payment = await findPayment(intentId);
+async function markProcessing(session: Stripe.Checkout.Session) {
+  const payment = await findPayment(session.id);
   if (!payment || payment.status !== PaymentStatus.REQUIRES_PAYMENT) return [];
 
   await prisma.payment.update({
     where: { id: payment.id },
-    data: { status: PaymentStatus.PROCESSING },
+    data: {
+      status: PaymentStatus.PROCESSING,
+      stripePaymentIntentId: intentIdOf(session),
+    },
   });
 
   return payment.orders;
+}
+
+// A completed session is paid outright on a card, or still clearing on a delayed method.
+function settleCompleted(session: Stripe.Checkout.Session) {
+  return session.payment_status === "unpaid"
+    ? markProcessing(session)
+    : markSucceeded(session);
 }
 
 export async function POST(request: Request) {
@@ -107,14 +130,17 @@ export async function POST(request: Request) {
     let touched: { id: number; items: { productId: number }[] }[] = [];
 
     switch (event.type) {
-      case "payment_intent.succeeded":
-        touched = await markSucceeded(event.data.object.id);
+      case "checkout.session.completed":
+        touched = await settleCompleted(event.data.object);
         break;
-      case "payment_intent.payment_failed":
-        touched = await markFailed(event.data.object.id);
+      case "checkout.session.async_payment_succeeded":
+        touched = await markSucceeded(event.data.object);
         break;
-      case "payment_intent.processing":
-        touched = await markProcessing(event.data.object.id);
+      case "checkout.session.async_payment_failed":
+        touched = await markUnpaid(event.data.object, PaymentStatus.FAILED);
+        break;
+      case "checkout.session.expired":
+        touched = await markUnpaid(event.data.object, PaymentStatus.CANCELLED);
         break;
     }
 
