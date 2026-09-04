@@ -15,7 +15,7 @@ export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
 export const PAYMENT_DESCRIPTION: Record<PaymentMethod, string> = {
   [PaymentMethod.COD]: "Bayar tunai saat barang sampai",
   [PaymentMethod.TRANSFER]: "Transfer manual ke rekening penjual",
-  [PaymentMethod.CARD]: "Bayar sekarang lewat Stripe (mode uji)",
+  [PaymentMethod.CARD]: "Bayar sekarang di halaman Stripe (mode uji)",
 };
 
 // A card order carries a gateway state the other methods do not, so it gets its own label table.
