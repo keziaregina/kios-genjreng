@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { formatAddress } from "@/lib/addresses";
@@ -17,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { cartInclude } from "@/lib/queries";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { revalidateCart, revalidateOrders } from "@/lib/revalidate";
+import { storeLabel } from "@/lib/store";
 import { stripe, toStripeAmount } from "@/lib/stripe/client";
 import { computeDiscount, normalizeVoucherCode } from "@/lib/vouchers";
 import type { ActionResult } from "@/types/action";
@@ -328,7 +330,7 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
   let orderIds: number[] = [];
   let productIds: number[] = [];
   let paymentId: number | null = null;
-  let paymentAmount = 0;
+  let paymentLines: { name: string; total: number }[] = [];
 
   try {
     const created = await prisma.$transaction(async (tx) => {
@@ -360,6 +362,7 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
       }
 
       const ids: number[] = [];
+      const lines: { name: string; total: number }[] = [];
       let amount = 0;
 
       for (const group of groupByMerchant(items)) {
@@ -466,6 +469,7 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
         }
 
         ids.push(order.id);
+        lines.push({ name: `Pesanan #${order.id} · ${storeLabel(group.merchant)}`, total });
       }
 
       // A multi-merchant cart splits into several orders but is paid once, so one Payment row owns them all.
@@ -494,14 +498,14 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
         ids,
         productIds: items.map((item) => item.productId),
         paymentId,
-        amount,
+        lines,
       };
     });
 
     orderIds = created.ids;
     productIds = created.productIds;
     paymentId = created.paymentId;
-    paymentAmount = created.amount;
+    paymentLines = created.lines;
   } catch (error) {
     const message = failureMessage(error);
     if (message) {
@@ -513,22 +517,41 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
     return { ok: false, message: "Gagal memproses checkout" };
   }
 
-  // The intent is created outside the transaction, otherwise a call across the internet holds every claimed row locked.
+  // The session is created outside the transaction, otherwise a call across the internet holds every claimed row locked.
   if (paymentId !== null) {
+    let checkoutUrl: string;
+
     try {
-      const intent = await stripe().paymentIntents.create({
-        amount: toStripeAmount(paymentAmount),
-        currency: "idr",
-        automatic_payment_methods: { enabled: true },
+      const origin = await appOrigin();
+
+      const checkoutSession = await stripe().checkout.sessions.create({
+        mode: "payment",
+        client_reference_id: String(paymentId),
         metadata: { paymentId: String(paymentId) },
+        // The intent is minted by Stripe, so the id it will report back is stamped here rather than looked up later.
+        payment_intent_data: { metadata: { paymentId: String(paymentId) } },
+        line_items: paymentLines.map((line) => ({
+          quantity: 1,
+          price_data: {
+            currency: "idr",
+            unit_amount: toStripeAmount(line.total),
+            product_data: { name: line.name },
+          },
+        })),
+        success_url: `${origin}/dashboard/cart/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/dashboard/orders`,
       });
+
+      if (!checkoutSession.url) throw new Error("NO_CHECKOUT_URL");
 
       await prisma.payment.update({
         where: { id: paymentId },
-        data: { stripePaymentIntentId: intent.id },
+        data: { stripeCheckoutSessionId: checkoutSession.id },
       });
+
+      checkoutUrl = checkoutSession.url;
     } catch (error) {
-      console.error("[checkout:intent]", error);
+      console.error("[checkout:session]", error);
       await releaseUnpaidCheckout(paymentId, orderIds);
       revalidateCart();
       revalidateOrders(productIds);
@@ -538,8 +561,8 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
     checkoutLimiter.record(key);
     revalidateCart();
     revalidateOrders(productIds);
-    // Paying needs its own route: revalidateCart() bounces the checkout page, which redirects once the cart is empty.
-    redirect(`/dashboard/cart/checkout/pay/${paymentId}`);
+    // Payment happens on Stripe's own page now, so the buyer leaves the app instead of confirming an Element here.
+    redirect(checkoutUrl);
   }
 
   checkoutLimiter.record(key);
@@ -548,7 +571,15 @@ export async function checkout(input: CheckoutInput): Promise<ActionResult> {
   redirect(orderIds.length === 1 ? `/dashboard/orders/${orderIds[0]}` : "/dashboard/orders");
 }
 
-// The orders exist but no intent does, so they are rolled back the same way a failed payment rolls them back.
+// Stripe Checkout only takes absolute URLs, and the app declares no canonical origin, so the request's own host is used.
+async function appOrigin() {
+  const list = await headers();
+  const host = list.get("host") ?? "localhost:3000";
+  const proto = list.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+// The orders exist but no session does, so they are rolled back the same way a failed payment rolls them back.
 async function releaseUnpaidCheckout(paymentId: number, orderIds: number[]) {
   try {
     await prisma.$transaction(async (tx) => {
