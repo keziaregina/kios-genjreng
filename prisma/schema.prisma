@@ -54,8 +54,8 @@ model User {
   updatedAt    DateTime @updatedAt
 
   products       Product[]
-  buyerOrders    Order[]    @relation("BuyerOrders")
-  merchantOrders Order[]    @relation("MerchantOrders")
+  buyerOrders    Order[]             @relation("BuyerOrders")
+  merchantOrders Order[]             @relation("MerchantOrders")
   cartItems      CartItem[]
   reviews        Review[]
   addresses      Address[]
@@ -141,9 +141,9 @@ model Order {
   shipPhone       String?
   shipAddress     String?
 
-  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  merchant User        @relation("MerchantOrders", fields: [merchantId], references: [id])
-  payment    Payment?    @relation(fields: [paymentId], references: [id])
+  buyer      User               @relation("BuyerOrders", fields: [buyerId], references: [id])
+  merchant   User               @relation("MerchantOrders", fields: [merchantId], references: [id])
+  payment    Payment?           @relation(fields: [paymentId], references: [id])
   items      OrderItem[]
   reviews    Review[]
   redemption VoucherRedemption?
@@ -155,14 +155,15 @@ model Order {
 
 // One checkout splits into an Order per merchant but is paid once, so the Stripe intent hangs off its own row.
 model Payment {
-  id                    Int           @id @default(autoincrement())
-  buyerId               Int
-  amount                Int
-  currency              String        @default("idr")
-  status                PaymentStatus @default(REQUIRES_PAYMENT)
-  stripePaymentIntentId String?       @unique
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                      Int           @id @default(autoincrement())
+  buyerId                 Int
+  amount                  Int
+  currency                String        @default("idr")
+  status                  PaymentStatus @default(REQUIRES_PAYMENT)
+  stripePaymentIntentId   String?       @unique
+  stripeCheckoutSessionId String?       @unique
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   buyer  User    @relation(fields: [buyerId], references: [id])
   orders Order[]
