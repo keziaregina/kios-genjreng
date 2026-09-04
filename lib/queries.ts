@@ -175,10 +175,18 @@ export function getVoucher(id: number, userId: number) {
   return prisma.voucher.findFirst({ where: { id, userId } });
 }
 
-// A buyer may only ever confirm their own intent, so ownership is part of the lookup instead of a later check.
+// A buyer may only ever confirm their own payment, so ownership is part of the lookup instead of a later check.
 export function getPayment(id: number, buyerId: number) {
   return prisma.payment.findFirst({
     where: { id, buyerId },
-    select: { id: true, amount: true, status: true, stripePaymentIntentId: true },
+    select: { id: true, amount: true, status: true, stripeCheckoutSessionId: true },
+  });
+}
+
+// Stripe's return leg names the session, not the row, so the receipt page looks the payment up the other way round.
+export function getPaymentBySession(sessionId: string, buyerId: number) {
+  return prisma.payment.findFirst({
+    where: { stripeCheckoutSessionId: sessionId, buyerId },
+    select: { id: true, amount: true, status: true },
   });
 }
