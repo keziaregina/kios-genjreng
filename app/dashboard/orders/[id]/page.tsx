@@ -176,6 +176,20 @@ const OrderDetailPage = async ({ params }: PageProps) => {
         </div>
       </dl>
 
+      {/* Cancelling on Stripe's page leaves the order unpaid, so the buyer needs a way back to the hosted session. */}
+      {side === Role.BUYER &&
+        order.paymentMethod === PaymentMethod.CARD &&
+        order.status === OrderStatus.PENDING &&
+        order.paymentId !== null &&
+        order.payment?.status === PaymentStatus.REQUIRES_PAYMENT && (
+          <Link
+            href={`/dashboard/cart/checkout/pay/${order.paymentId}`}
+            className="bg-button-primary text-text-primary mb-[21px] flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-bold active:opacity-80"
+          >
+            Bayar Sekarang
+          </Link>
+        )}
+
       <StatusActions
         orderId={order.id}
         status={order.status}
